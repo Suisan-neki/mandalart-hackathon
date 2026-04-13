@@ -31,6 +31,7 @@ def get_notion_page_id_by_title(title):
 
 def update_notion_page_status(page_id, github_state):
     status_map = {
+        "open": "進行中",
         "opened": "進行中",
         "reopened": "進行中",
         "closed": "完了"

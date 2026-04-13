@@ -19,7 +19,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install notion-client
+          pip install "notion-client<3"
           pip show notion-client # Installed notion-client version check
 
       - name: Run Notion Sync Script
