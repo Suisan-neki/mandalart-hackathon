@@ -1,6 +1,7 @@
 name: Sync GitHub Issue to Notion
 
 on:
+  workflow_dispatch:
   issues:
     types: [opened, edited, closed, reopened]
 
