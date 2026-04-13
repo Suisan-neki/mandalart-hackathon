@@ -1,0 +1,32 @@
+name: Sync GitHub Issue to Notion
+
+on:
+  issues:
+    types: [opened, edited, closed, reopened]
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install notion-client
+          pip show notion-client # Installed notion-client version check
+
+      - name: Run Notion Sync Script
+        env:
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+          GITHUB_ISSUE_TITLE: ${{ github.event.issue.title }}
+          GITHUB_ISSUE_STATE: ${{ github.event.issue.state }}
+          GITHUB_ISSUE_URL: ${{ github.event.issue.html_url }}
+        run: python .github/workflows/sync_notion.py
