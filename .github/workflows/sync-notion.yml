@@ -2,6 +2,23 @@ name: Sync GitHub Issue to Notion
 
 on:
   workflow_dispatch:
+    inputs:
+      issue_title:
+        description: GitHub Issue title
+        required: true
+        type: string
+      issue_state:
+        description: GitHub Issue state
+        required: true
+        type: choice
+        default: open
+        options:
+          - open
+          - closed
+      issue_url:
+        description: GitHub Issue URL
+        required: true
+        type: string
   issues:
     types: [opened, edited, closed, reopened]
 
@@ -27,7 +44,7 @@ jobs:
         env:
           NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
           NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
-          GITHUB_ISSUE_TITLE: ${{ github.event.issue.title }}
-          GITHUB_ISSUE_STATE: ${{ github.event.issue.state }}
-          GITHUB_ISSUE_URL: ${{ github.event.issue.html_url }}
+          GITHUB_ISSUE_TITLE: ${{ github.event.issue.title || inputs.issue_title }}
+          GITHUB_ISSUE_STATE: ${{ github.event.issue.state || inputs.issue_state }}
+          GITHUB_ISSUE_URL: ${{ github.event.issue.html_url || inputs.issue_url }}
         run: python .github/workflows/sync_notion.py
