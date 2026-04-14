@@ -4,4 +4,6 @@ package-lock.json
 .DS_Store
 *.local
 .derivedData/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
 
