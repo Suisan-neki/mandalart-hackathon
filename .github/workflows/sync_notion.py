@@ -3,6 +3,7 @@ from notion_client import Client
 
 NOTION_API_KEY = os.environ.get("NOTION_API_KEY")
 NOTION_DATABASE_ID = os.environ.get("NOTION_DATABASE_ID")
+NOTION_TITLE_PROPERTY_NAME = os.environ.get("NOTION_TITLE_PROPERTY_NAME")
 GITHUB_ISSUE_TITLE = os.environ.get("GITHUB_ISSUE_TITLE")
 GITHUB_ISSUE_STATE = os.environ.get("GITHUB_ISSUE_STATE")
 GITHUB_ISSUE_URL = os.environ.get("GITHUB_ISSUE_URL")
@@ -14,9 +15,16 @@ if not all([NOTION_API_KEY, NOTION_DATABASE_ID, GITHUB_ISSUE_TITLE, GITHUB_ISSUE
 notion = Client(auth=NOTION_API_KEY)
 
 
-def build_title_filter(title):
+def find_title_property_name(properties):
+    for property_name, property_value in properties.items():
+        if property_value.get("type") == "title":
+            return property_name
+    return None
+
+
+def build_title_filter(property_name, title):
     return {
-        "property": "Name",
+        "property": property_name,
         "title": {
             "equals": title
         }
@@ -24,17 +32,19 @@ def build_title_filter(title):
 
 
 def query_notion_pages(title):
-    title_filter = build_title_filter(title)
     data_sources_endpoint = getattr(notion, "data_sources", None)
     databases_endpoint = getattr(notion, "databases", None)
     errors = []
 
     if data_sources_endpoint and hasattr(data_sources_endpoint, "query"):
         candidate_ids = [NOTION_DATABASE_ID]
+        title_property_name = NOTION_TITLE_PROPERTY_NAME
 
         if databases_endpoint and hasattr(databases_endpoint, "retrieve"):
             try:
                 database = databases_endpoint.retrieve(database_id=NOTION_DATABASE_ID)
+                if not title_property_name:
+                    title_property_name = find_title_property_name(database.get("properties", {}))
                 for data_source in database.get("data_sources", []):
                     data_source_id = data_source.get("id")
                     if data_source_id and data_source_id not in candidate_ids:
@@ -44,18 +54,29 @@ def query_notion_pages(title):
 
         for candidate_id in candidate_ids:
             try:
+                if not title_property_name and hasattr(data_sources_endpoint, "retrieve"):
+                    data_source = data_sources_endpoint.retrieve(data_source_id=candidate_id)
+                    title_property_name = find_title_property_name(data_source.get("properties", {}))
+
+                if not title_property_name:
+                    title_property_name = "Name"
+
                 return data_sources_endpoint.query(
                     data_source_id=candidate_id,
-                    filter=title_filter
+                    filter=build_title_filter(title_property_name, title)
                 )
             except Exception as exc:
                 errors.append(f"Failed to query data source '{candidate_id}': {exc}")
 
     if databases_endpoint and hasattr(databases_endpoint, "query"):
         try:
+            title_property_name = NOTION_TITLE_PROPERTY_NAME or "Name"
+            if hasattr(databases_endpoint, "retrieve"):
+                database = databases_endpoint.retrieve(database_id=NOTION_DATABASE_ID)
+                title_property_name = find_title_property_name(database.get("properties", {})) or title_property_name
             return databases_endpoint.query(
                 database_id=NOTION_DATABASE_ID,
-                filter=title_filter
+                filter=build_title_filter(title_property_name, title)
             )
         except Exception as exc:
             errors.append(f"Failed to query database '{NOTION_DATABASE_ID}': {exc}")
