@@ -80,7 +80,7 @@ struct DailyCheckinView: View {
                             isTop: isTop,
                             onSwipe: { didComplete in
                                 withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                                    tasks.removeLast()
+                                    _ = tasks.removeLast()
                                 }
                             }
                         )
@@ -174,7 +174,7 @@ struct SwipeableCard: View {
 
     private var rotation: Double { Double(offset.width) / 20 }
     private var swipeProgress: Double {
-        min(abs(offset.width) / 150, 1)
+        min(Double(abs(offset.width) / 150.0), 1.0)
     }
     private var cardBg: Color {
         if offset.width > 30 {
@@ -235,7 +235,7 @@ struct SwipeableCard: View {
             .padding(32)
         }
         .frame(maxWidth: 320)
-        .aspectRatio(3/4, contentMode: .fit)
+        .aspectRatio(3.0 / 4.0, contentMode: .fit)
         .offset(offset)
         .rotationEffect(.degrees(rotation))
         .gesture(

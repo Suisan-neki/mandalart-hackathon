@@ -1,0 +1,441 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0E489A36787A3336F73291AD /* AppModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6123D16223BE3D483A4BED9B /* AppModels.swift */; };
+		1AC74AC97AD467625104A12D /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CA8D0CB5C7881C66A96E4CC /* SplashView.swift */; };
+		30510F2F8D2DA1DE0619095D /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BB58C68ACD51FEFE62B6060 /* HomeView.swift */; };
+		3071129EB80F676AEA1B5EC2 /* DailyCheckinView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 427A43F18A06FAA93691FD61 /* DailyCheckinView.swift */; };
+		3614F7B9C6B3D44186F7A5F7 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69FEA2D1A87AC12CAD3FED44 /* ContentView.swift */; };
+		55BCE78193ED079866FD4A41 /* ResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81572150CA67FB3988226990 /* ResultView.swift */; };
+		7278AE0FBA064A7D45C01933 /* Color+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE0A2FB6F6642C3EF6BE3760 /* Color+Hex.swift */; };
+		752D49F63015D23D6C330C61 /* MandalartListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1758A5909568E93C34AEB106 /* MandalartListView.swift */; };
+		8CCA153B552EA814EABBEFF6 /* MandalartSyncApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23656B2AE0557D95CC51F62F /* MandalartSyncApp.swift */; };
+		ABA2C36DF7EE24538453B7C6 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74D6FA8C2A7FDF43EF43F2DB /* MainTabView.swift */; };
+		AC6186EB7A5F3262C7917638 /* AppViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D14A4A8075029A6213B9262 /* AppViewModel.swift */; };
+		B373F630F3FA76551FBF93DA /* BlockMandalartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD454EE6A2B0CF9397DC2A93 /* BlockMandalartView.swift */; };
+		B65AFE6454A1732679F88683 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3D6A33DE9E5A20D54B0D54CB /* Assets.xcassets */; };
+		D31048247E96D2109679629B /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00D410DB148BE227CFAD061E /* SettingsView.swift */; };
+		F9551369D0D1D38E7D62C7F6 /* SyncJournalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9EAD018D0A114976DE89D91 /* SyncJournalView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		00D410DB148BE227CFAD061E /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		1758A5909568E93C34AEB106 /* MandalartListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MandalartListView.swift; sourceTree = "<group>"; };
+		23656B2AE0557D95CC51F62F /* MandalartSyncApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MandalartSyncApp.swift; sourceTree = "<group>"; };
+		2BB58C68ACD51FEFE62B6060 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		3D6A33DE9E5A20D54B0D54CB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		427A43F18A06FAA93691FD61 /* DailyCheckinView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyCheckinView.swift; sourceTree = "<group>"; };
+		597985B3BCD5B71AD9AC2D80 /* MandalartSync.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = MandalartSync.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		5CA8D0CB5C7881C66A96E4CC /* SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashView.swift; sourceTree = "<group>"; };
+		6123D16223BE3D483A4BED9B /* AppModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModels.swift; sourceTree = "<group>"; };
+		69FEA2D1A87AC12CAD3FED44 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		74D6FA8C2A7FDF43EF43F2DB /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		7D14A4A8075029A6213B9262 /* AppViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppViewModel.swift; sourceTree = "<group>"; };
+		81572150CA67FB3988226990 /* ResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResultView.swift; sourceTree = "<group>"; };
+		BD454EE6A2B0CF9397DC2A93 /* BlockMandalartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockMandalartView.swift; sourceTree = "<group>"; };
+		D9EAD018D0A114976DE89D91 /* SyncJournalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncJournalView.swift; sourceTree = "<group>"; };
+		DE0A2FB6F6642C3EF6BE3760 /* Color+Hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Hex.swift"; sourceTree = "<group>"; };
+		F5CD8462CD5B0B6723110418 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		4C0C98DAF1A7871F849921A9 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				597985B3BCD5B71AD9AC2D80 /* MandalartSync.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		4C7ACC8142C8C239D6F75555 /* MandalartSync */ = {
+			isa = PBXGroup;
+			children = (
+				3D6A33DE9E5A20D54B0D54CB /* Assets.xcassets */,
+				69FEA2D1A87AC12CAD3FED44 /* ContentView.swift */,
+				F5CD8462CD5B0B6723110418 /* Info.plist */,
+				23656B2AE0557D95CC51F62F /* MandalartSyncApp.swift */,
+				D7F0D7B9E93C5DDEE5A3DFF0 /* Extensions */,
+				7C8206134214C1B591C6F2D1 /* Models */,
+				FF93CEDE5643EC3CB085A43D /* ViewModels */,
+				81F94583D5A3AAF56B816684 /* Views */,
+			);
+			path = MandalartSync;
+			sourceTree = "<group>";
+		};
+		6C70E6F7BB5D46FBFA91FDFF /* ios */ = {
+			isa = PBXGroup;
+			children = (
+				4C7ACC8142C8C239D6F75555 /* MandalartSync */,
+			);
+			path = ios;
+			sourceTree = "<group>";
+		};
+		7C8206134214C1B591C6F2D1 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				6123D16223BE3D483A4BED9B /* AppModels.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		81F94583D5A3AAF56B816684 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				74D6FA8C2A7FDF43EF43F2DB /* MainTabView.swift */,
+				5CA8D0CB5C7881C66A96E4CC /* SplashView.swift */,
+				D9F892E7C1F74536B5267F27 /* Actions */,
+				C2A5A409BAFF14A7A4E9821A /* Goals */,
+				C7C33535ECB106E5223E8571 /* Records */,
+				F19B8955F4F8186A0721CC6B /* Settings */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		C2A5A409BAFF14A7A4E9821A /* Goals */ = {
+			isa = PBXGroup;
+			children = (
+				BD454EE6A2B0CF9397DC2A93 /* BlockMandalartView.swift */,
+				1758A5909568E93C34AEB106 /* MandalartListView.swift */,
+			);
+			path = Goals;
+			sourceTree = "<group>";
+		};
+		C7C33535ECB106E5223E8571 /* Records */ = {
+			isa = PBXGroup;
+			children = (
+				81572150CA67FB3988226990 /* ResultView.swift */,
+				D9EAD018D0A114976DE89D91 /* SyncJournalView.swift */,
+			);
+			path = Records;
+			sourceTree = "<group>";
+		};
+		D7F0D7B9E93C5DDEE5A3DFF0 /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				DE0A2FB6F6642C3EF6BE3760 /* Color+Hex.swift */,
+			);
+			path = Extensions;
+			sourceTree = "<group>";
+		};
+		D9F892E7C1F74536B5267F27 /* Actions */ = {
+			isa = PBXGroup;
+			children = (
+				427A43F18A06FAA93691FD61 /* DailyCheckinView.swift */,
+				2BB58C68ACD51FEFE62B6060 /* HomeView.swift */,
+			);
+			path = Actions;
+			sourceTree = "<group>";
+		};
+		E5C0A1A13A1F6AA8C14747F4 = {
+			isa = PBXGroup;
+			children = (
+				6C70E6F7BB5D46FBFA91FDFF /* ios */,
+				4C0C98DAF1A7871F849921A9 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		F19B8955F4F8186A0721CC6B /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				00D410DB148BE227CFAD061E /* SettingsView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		FF93CEDE5643EC3CB085A43D /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				7D14A4A8075029A6213B9262 /* AppViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		37BEA26A7561193EE35877E3 /* MandalartSync */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DC20567BC3F2824D58D77261 /* Build configuration list for PBXNativeTarget "MandalartSync" */;
+			buildPhases = (
+				09F8D4F95EFC7B960F6DB1BD /* Sources */,
+				ACCFD3664DFD795AAC780D36 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MandalartSync;
+			packageProductDependencies = (
+			);
+			productName = MandalartSync;
+			productReference = 597985B3BCD5B71AD9AC2D80 /* MandalartSync.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		BDADA132BD9F8C031087D1F1 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					37BEA26A7561193EE35877E3 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = D266FC03BB74D61ED4CA761B /* Build configuration list for PBXProject "MandalartSync" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = E5C0A1A13A1F6AA8C14747F4;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 4C0C98DAF1A7871F849921A9 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				37BEA26A7561193EE35877E3 /* MandalartSync */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		ACCFD3664DFD795AAC780D36 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B65AFE6454A1732679F88683 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		09F8D4F95EFC7B960F6DB1BD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0E489A36787A3336F73291AD /* AppModels.swift in Sources */,
+				AC6186EB7A5F3262C7917638 /* AppViewModel.swift in Sources */,
+				B373F630F3FA76551FBF93DA /* BlockMandalartView.swift in Sources */,
+				7278AE0FBA064A7D45C01933 /* Color+Hex.swift in Sources */,
+				3614F7B9C6B3D44186F7A5F7 /* ContentView.swift in Sources */,
+				3071129EB80F676AEA1B5EC2 /* DailyCheckinView.swift in Sources */,
+				30510F2F8D2DA1DE0619095D /* HomeView.swift in Sources */,
+				ABA2C36DF7EE24538453B7C6 /* MainTabView.swift in Sources */,
+				752D49F63015D23D6C330C61 /* MandalartListView.swift in Sources */,
+				8CCA153B552EA814EABBEFF6 /* MandalartSyncApp.swift in Sources */,
+				55BCE78193ED079866FD4A41 /* ResultView.swift in Sources */,
+				D31048247E96D2109679629B /* SettingsView.swift in Sources */,
+				1AC74AC97AD467625104A12D /* SplashView.swift in Sources */,
+				F9551369D0D1D38E7D62C7F6 /* SyncJournalView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		93ED9293FB0B4490DA9FB8D9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ios/MandalartSync/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		C948810945080E48AEBA5E54 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ios/MandalartSync/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		CCDD1C402367960D74A7788F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.mandalartsync;
+				PRODUCT_NAME = MandalartSync;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		F745A966EF4182EB7F3674B0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.mandalartsync;
+				PRODUCT_NAME = MandalartSync;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		D266FC03BB74D61ED4CA761B /* Build configuration list for PBXProject "MandalartSync" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CCDD1C402367960D74A7788F /* Debug */,
+				F745A966EF4182EB7F3674B0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		DC20567BC3F2824D58D77261 /* Build configuration list for PBXNativeTarget "MandalartSync" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C948810945080E48AEBA5E54 /* Debug */,
+				93ED9293FB0B4490DA9FB8D9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = BDADA132BD9F8C031087D1F1 /* Project object */;
+}
