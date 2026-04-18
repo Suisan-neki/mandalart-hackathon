@@ -67,6 +67,9 @@ final class AppViewModel: ObservableObject {
     @Published var notificationsEnabled: Bool {
         didSet { persistState() }
     }
+    @Published var intenseEffectsEnabled: Bool {
+        didSet { persistState() }
+    }
     @Published var isSyncing = false
     @Published var syncErrorMessage: String?
     @Published var notificationAuthorizationStatus: UNAuthorizationStatus = .notDetermined
@@ -125,6 +128,7 @@ final class AppViewModel: ObservableObject {
         self.githubSettings = state.githubSettings
         self.googleCalendarSettings = state.googleCalendarSettings
         self.notificationsEnabled = state.notificationsEnabled
+        self.intenseEffectsEnabled = state.intenseEffectsEnabled
         let storedSettings = Self.loadStoredSettings(modelContext: modelContext)
         self.lastCloudSyncAt = storedSettings?.lastCloudSyncAt
         self.cloudSyncStatusMessage = storedSettings?.cloudSyncStatusMessage ?? "未同期"
@@ -330,6 +334,10 @@ final class AppViewModel: ObservableObject {
         }
     }
 
+    func updateIntenseEffectsEnabled(to enabled: Bool) {
+        intenseEffectsEnabled = enabled
+    }
+
     func resetAllData() {
         let state = PersistedAppState.default
         mainGoal = state.mainGoal
@@ -339,6 +347,7 @@ final class AppViewModel: ObservableObject {
         githubSettings = state.githubSettings
         googleCalendarSettings = state.googleCalendarSettings
         notificationsEnabled = state.notificationsEnabled
+        intenseEffectsEnabled = state.intenseEffectsEnabled
         lastCloudSyncAt = nil
         cloudSyncStatusMessage = "未同期"
         KeychainStore.delete(service: SecretKeys.service, account: SecretKeys.githubToken)
@@ -666,7 +675,8 @@ final class AppViewModel: ObservableObject {
             gapInsights: gapInsights,
             githubSettings: githubSettings,
             googleCalendarSettings: googleCalendarSettings,
-            notificationsEnabled: notificationsEnabled
+            notificationsEnabled: notificationsEnabled,
+            intenseEffectsEnabled: intenseEffectsEnabled
         )
 
         persistStateToSwiftData(state)
@@ -688,7 +698,8 @@ final class AppViewModel: ObservableObject {
                         githubHasPersonalAccessToken: state.githubSettings.hasPersonalAccessToken,
                         googleCalendarID: state.googleCalendarSettings.calendarId,
                         googleCalendarHasAccessToken: state.googleCalendarSettings.hasAccessToken,
-                        notificationsEnabled: state.notificationsEnabled
+                        notificationsEnabled: state.notificationsEnabled,
+                        intenseEffectsEnabled: state.intenseEffectsEnabled
                     )
                     modelContext.insert(record)
                     return record
@@ -701,6 +712,7 @@ final class AppViewModel: ObservableObject {
             settings.googleCalendarID = state.googleCalendarSettings.calendarId
             settings.googleCalendarHasAccessToken = state.googleCalendarSettings.hasAccessToken
             settings.notificationsEnabled = state.notificationsEnabled
+            settings.intenseEffectsEnabled = state.intenseEffectsEnabled
             settings.lastCloudSyncAt = lastCloudSyncAt
             settings.cloudSyncStatusMessage = cloudSyncStatusMessage
 
@@ -792,7 +804,8 @@ final class AppViewModel: ObservableObject {
             gapInsights: state.gapInsights,
             githubSettings: state.githubSettings,
             googleCalendarSettings: state.googleCalendarSettings,
-            notificationsEnabled: state.notificationsEnabled
+            notificationsEnabled: state.notificationsEnabled,
+            intenseEffectsEnabled: state.intenseEffectsEnabled
         )
 
         do {
@@ -841,7 +854,8 @@ final class AppViewModel: ObservableObject {
                 calendarId: settings.googleCalendarID,
                 hasAccessToken: settings.googleCalendarHasAccessToken
             ),
-            notificationsEnabled: settings.notificationsEnabled
+            notificationsEnabled: settings.notificationsEnabled,
+            intenseEffectsEnabled: settings.intenseEffectsEnabled
         )
     }
 

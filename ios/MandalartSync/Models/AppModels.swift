@@ -168,6 +168,7 @@ struct PersistedAppState: Codable {
     var githubSettings: GitHubSettings
     var googleCalendarSettings: GoogleCalendarSettings
     var notificationsEnabled: Bool
+    var intenseEffectsEnabled: Bool
 
     static let `default` = PersistedAppState(
         mainGoal: "最強のエンジニアになる",
@@ -176,7 +177,8 @@ struct PersistedAppState: Codable {
         gapInsights: [],
         githubSettings: .default,
         googleCalendarSettings: .default,
-        notificationsEnabled: true
+        notificationsEnabled: true,
+        intenseEffectsEnabled: true
     )
 
     private enum CodingKeys: String, CodingKey {
@@ -187,6 +189,7 @@ struct PersistedAppState: Codable {
         case githubSettings
         case googleCalendarSettings
         case notificationsEnabled
+        case intenseEffectsEnabled
     }
 
     init(
@@ -196,7 +199,8 @@ struct PersistedAppState: Codable {
         gapInsights: [CognitiveGapInsight],
         githubSettings: GitHubSettings,
         googleCalendarSettings: GoogleCalendarSettings,
-        notificationsEnabled: Bool
+        notificationsEnabled: Bool,
+        intenseEffectsEnabled: Bool
     ) {
         self.mainGoal = mainGoal
         self.categories = categories
@@ -205,6 +209,7 @@ struct PersistedAppState: Codable {
         self.githubSettings = githubSettings
         self.googleCalendarSettings = googleCalendarSettings
         self.notificationsEnabled = notificationsEnabled
+        self.intenseEffectsEnabled = intenseEffectsEnabled
     }
 
     init(from decoder: Decoder) throws {
@@ -216,6 +221,7 @@ struct PersistedAppState: Codable {
         self.githubSettings = try container.decodeIfPresent(GitHubSettings.self, forKey: .githubSettings) ?? .default
         self.googleCalendarSettings = try container.decodeIfPresent(GoogleCalendarSettings.self, forKey: .googleCalendarSettings) ?? .default
         self.notificationsEnabled = try container.decodeIfPresent(Bool.self, forKey: .notificationsEnabled) ?? true
+        self.intenseEffectsEnabled = try container.decodeIfPresent(Bool.self, forKey: .intenseEffectsEnabled) ?? true
     }
 }
 
@@ -229,6 +235,7 @@ struct CloudSyncEnvelope: Codable {
     let githubSettings: GitHubSettings
     let googleCalendarSettings: GoogleCalendarSettings
     let notificationsEnabled: Bool
+    let intenseEffectsEnabled: Bool
 }
 
 // MARK: - SwiftData Models
@@ -358,6 +365,7 @@ final class StoredSettings {
     var googleCalendarID: String
     var googleCalendarHasAccessToken: Bool
     var notificationsEnabled: Bool
+    var intenseEffectsEnabled: Bool
     var lastCloudSyncAt: Date?
     var cloudSyncStatusMessage: String?
 
@@ -370,6 +378,7 @@ final class StoredSettings {
         googleCalendarID: String,
         googleCalendarHasAccessToken: Bool,
         notificationsEnabled: Bool,
+        intenseEffectsEnabled: Bool,
         lastCloudSyncAt: Date? = nil,
         cloudSyncStatusMessage: String? = nil
     ) {
@@ -381,6 +390,7 @@ final class StoredSettings {
         self.googleCalendarID = googleCalendarID
         self.googleCalendarHasAccessToken = googleCalendarHasAccessToken
         self.notificationsEnabled = notificationsEnabled
+        self.intenseEffectsEnabled = intenseEffectsEnabled
         self.lastCloudSyncAt = lastCloudSyncAt
         self.cloudSyncStatusMessage = cloudSyncStatusMessage
     }

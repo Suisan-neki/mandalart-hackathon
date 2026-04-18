@@ -1,4 +1,6 @@
+import AudioToolbox
 import SwiftUI
+import UIKit
 
 struct HomeView: View {
     @EnvironmentObject var vm: AppViewModel
@@ -6,6 +8,8 @@ struct HomeView: View {
     @State private var navigateToCheckin = false
     @State private var navigateToJournal = false
     @State private var navigateToResult = false
+    @State private var bannerPulse = false
+    @State private var warningShake: CGFloat = 0
 
     var body: some View {
         ScrollView {
@@ -44,6 +48,12 @@ struct HomeView: View {
             Button("閉じる", role: .cancel) {}
         } message: {
             Text(vm.syncErrorMessage ?? "")
+        }
+        .onAppear {
+            startWarningAnimationIfNeeded()
+        }
+        .onChange(of: vm.mostCriticalGap?.id) { _, _ in
+            startWarningAnimationIfNeeded()
         }
     }
 
@@ -329,13 +339,62 @@ struct HomeView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(18)
-            .background(Color.indigo100)
+            .background(bannerBackground)
             .clipShape(RoundedRectangle(cornerRadius: 24))
             .overlay(
-                RoundedRectangle(cornerRadius: 24).stroke(Color.indigo100, lineWidth: 0.5)
+                RoundedRectangle(cornerRadius: 24).stroke(bannerStroke, lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
+        .scaleEffect(bannerPulse ? 1.01 : 0.985)
+        .shadow(color: bannerShadow, radius: bannerPulse ? 22 : 8, y: 4)
+        .offset(x: warningShake)
+        .animation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true), value: bannerPulse)
+    }
+
+    private var bannerBackground: LinearGradient {
+        if vm.mostCriticalGap?.severity == .critical {
+            return LinearGradient(
+                colors: [Color(hex: "f5d0fe"), Color(hex: "fee2e2")],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
+        return LinearGradient(
+            colors: [Color.indigo100, Color(hex: "e9d5ff")],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+
+    private var bannerStroke: Color {
+        vm.mostCriticalGap?.severity == .critical ? Color.red500.opacity(0.35) : Color.indigo100
+    }
+
+    private var bannerShadow: Color {
+        vm.mostCriticalGap?.severity == .critical
+            ? Color.red500.opacity(vm.intenseEffectsEnabled ? 0.28 : 0.12)
+            : Color.indigo400.opacity(0.12)
+    }
+
+    private func startWarningAnimationIfNeeded() {
+        guard let gap = vm.mostCriticalGap else { return }
+
+        bannerPulse = true
+
+        guard vm.intenseEffectsEnabled, gap.severity.rank >= CognitiveGapSeverity.warning.rank else { return }
+
+        let notification = UINotificationFeedbackGenerator()
+        notification.notificationOccurred(gap.severity == .critical ? .error : .warning)
+        AudioServicesPlaySystemSound(1006)
+
+        withAnimation(.easeInOut(duration: 0.08)) { warningShake = -10 }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
+            withAnimation(.easeInOut(duration: 0.08)) { warningShake = 8 }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.16) {
+            withAnimation(.spring(response: 0.25, dampingFraction: 0.5)) { warningShake = 0 }
+        }
     }
 }
 

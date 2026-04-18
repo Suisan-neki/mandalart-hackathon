@@ -1,4 +1,6 @@
+import AudioToolbox
 import SwiftUI
+import UIKit
 
 struct ResultView: View {
     @EnvironmentObject private var vm: AppViewModel
@@ -6,6 +8,8 @@ struct ResultView: View {
     @State private var pulseScale: CGFloat = 1.0
     @State private var pulseOpacity: Double = 0.3
     @State private var navigateToJournal = false
+    @State private var glitchOffset: CGFloat = 0
+    @State private var warningFlash = false
 
     private var targetRate: Int { vm.todayCompletionRate }
     private var completedActions: Int { vm.todayCompletedCount }
@@ -72,7 +76,19 @@ struct ResultView: View {
         .navigationDestination(isPresented: $navigateToJournal) {
             SyncJournalView()
         }
-        .onAppear { animateRate() }
+        .overlay(alignment: .top) {
+            if warningFlash && vm.intenseEffectsEnabled && vm.mostCriticalGap?.severity == .critical {
+                Rectangle()
+                    .fill(Color.red500.opacity(0.08))
+                    .ignoresSafeArea()
+                    .transition(.opacity)
+            }
+        }
+        .offset(x: glitchOffset)
+        .onAppear {
+            animateRate()
+            triggerGapPresentationIfNeeded()
+        }
     }
 
     // MARK: - Achievement Ring
@@ -336,6 +352,12 @@ struct ResultView: View {
                 .background(.white.opacity(0.8))
                 .clipShape(RoundedRectangle(cornerRadius: 20))
                 .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.stone100))
+                .shadow(
+                    color: vm.mostCriticalGap?.severity == .critical
+                        ? Color.red500.opacity(vm.intenseEffectsEnabled ? 0.22 : 0.08)
+                        : .clear,
+                    radius: 16
+                )
             }
         }
     }
@@ -402,6 +424,33 @@ struct ResultView: View {
             return Color(hex: "dc2626")
         case .critical:
             return Color(hex: "6d28d9")
+        }
+    }
+
+    private func triggerGapPresentationIfNeeded() {
+        guard let gap = vm.mostCriticalGap else { return }
+        guard gap.severity.rank >= CognitiveGapSeverity.warning.rank else { return }
+
+        if vm.intenseEffectsEnabled {
+            let notification = UINotificationFeedbackGenerator()
+            notification.notificationOccurred(gap.severity == .critical ? .error : .warning)
+            AudioServicesPlaySystemSound(gap.severity == .critical ? 1016 : 1006)
+
+            withAnimation(.easeInOut(duration: 0.1)) { glitchOffset = -8; warningFlash = true }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
+                withAnimation(.easeInOut(duration: 0.08)) { glitchOffset = 7 }
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
+                withAnimation(.spring(response: 0.25, dampingFraction: 0.6)) {
+                    glitchOffset = 0
+                    warningFlash = false
+                }
+            }
+        }
+
+        withAnimation(.easeInOut(duration: 1.1).repeatForever(autoreverses: true)) {
+            pulseScale = gap.severity == .critical ? 1.2 : 1.16
+            pulseOpacity = gap.severity == .critical ? 0.75 : 0.65
         }
     }
 

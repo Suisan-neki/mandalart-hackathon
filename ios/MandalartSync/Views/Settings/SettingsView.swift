@@ -97,6 +97,47 @@ struct SettingsView: View {
 
                     Divider().padding(.horizontal, 16)
 
+                    HStack {
+                        HStack(spacing: 12) {
+                            ZStack {
+                                Circle()
+                                    .fill(Color.stone100)
+                                    .frame(width: 32, height: 32)
+                                Image(systemName: "waveform.path.badge.minus")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(Color.stone500)
+                            }
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("刺激強め演出")
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundColor(Color.stone800)
+                                Text("揺れ・ハプティクス・強い警告表現を有効化")
+                                    .font(.system(size: 11, weight: .medium))
+                                    .foregroundColor(Color.stone500)
+                            }
+                        }
+                        Spacer()
+                        ZStack(alignment: vm.intenseEffectsEnabled ? .trailing : .leading) {
+                            Capsule()
+                                .fill(vm.intenseEffectsEnabled ? Color.indigo600 : Color.stone300)
+                                .frame(width: 44, height: 24)
+                            Circle()
+                                .fill(.white)
+                                .frame(width: 18, height: 18)
+                                .shadow(color: .black.opacity(0.1), radius: 2)
+                                .padding(3)
+                        }
+                        .onTapGesture {
+                            withAnimation(.spring(response: 0.3)) {
+                                vm.updateIntenseEffectsEnabled(to: !vm.intenseEffectsEnabled)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+
+                    Divider().padding(.horizontal, 16)
+
                     Button(action: { showResetAlert = true }) {
                         HStack(spacing: 12) {
                             ZStack {
