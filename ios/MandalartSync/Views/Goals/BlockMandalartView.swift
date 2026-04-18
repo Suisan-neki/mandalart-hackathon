@@ -3,10 +3,7 @@ import SwiftUI
 struct BlockMandalartView: View {
     @EnvironmentObject var vm: AppViewModel
     @State private var selectedBlock: SelectedBlock? = nil
-    @State private var viewMode: ViewMode = .block
     @Namespace private var ns
-
-    enum ViewMode { case block, list }
 
     var body: some View {
         ZStack {
@@ -66,15 +63,13 @@ struct BlockMandalartView: View {
     @ViewBuilder
     private var viewModeToggle: some View {
         HStack(spacing: 4) {
-            Button(action: {}) {
-                Label("ブロック", systemImage: "square.3.layers.3d")
-                    .font(.system(size: 11, weight: .bold))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(Color.zinc800)
-                    .foregroundColor(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-            }
+            Label("ブロック", systemImage: "square.3.layers.3d")
+                .font(.system(size: 11, weight: .bold))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(Color.zinc800)
+                .foregroundColor(.white)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
             NavigationLink(destination: MandalartListView()) {
                 Label("リスト", systemImage: "square.grid.2x2")
                     .font(.system(size: 11, weight: .bold))
@@ -82,6 +77,7 @@ struct BlockMandalartView: View {
                     .padding(.vertical, 6)
                     .foregroundColor(Color.zinc500)
             }
+            .buttonStyle(.plain)
         }
         .background(Color.zinc900)
         .clipShape(RoundedRectangle(cornerRadius: 14))

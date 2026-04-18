@@ -178,7 +178,7 @@ struct HomeView: View {
                         .background(Color.indigo100)
                         .clipShape(RoundedRectangle(cornerRadius: 16))
                     Spacer()
-                    Text("未完了（約2分）")
+                    Text("残り \(vm.pendingDailyTasks.count) 件")
                         .font(.system(size: 10, weight: .bold))
                         .foregroundColor(.white)
                         .padding(.horizontal, 10)
@@ -192,7 +192,7 @@ struct HomeView: View {
                     .font(.system(size: 20, weight: .black))
                     .foregroundColor(Color.stone900)
 
-                Text("今日の行動を振り返り、目標に向けて前進しましょう。小さな一歩も大切な記録です。")
+                Text("今日の行動を振り返り、32項目の目標にどう近づいたかを記録しましょう。小さな一歩も大切な積み上げです。")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(Color.stone500)
                     .lineSpacing(4)

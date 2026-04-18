@@ -3,7 +3,6 @@ import SwiftUI
 struct MandalartListView: View {
     @EnvironmentObject var vm: AppViewModel
     @State private var expandedId: Int? = nil
-    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         ZStack {
@@ -11,13 +10,23 @@ struct MandalartListView: View {
 
             ScrollView {
                 VStack(spacing: 16) {
-                    ForEach(vm.categories) { category in
+                    ForEach($vm.categories) { $category in
                         CategoryCard(
-                            category: category,
+                            category: $category,
                             isExpanded: expandedId == category.id,
                             onTap: {
                                 withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
                                     expandedId = expandedId == category.id ? nil : category.id
+                                }
+                            },
+                            onSave: {
+                                vm.appendSystemEntry(
+                                    action: "マンダラートを更新しました",
+                                    detail: "「\(category.title)」の内容を保存しました。",
+                                    targetGoal: vm.mainGoal
+                                )
+                                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                    expandedId = nil
                                 }
                             }
                         )
@@ -37,9 +46,10 @@ struct MandalartListView: View {
 
 // MARK: - Category Card
 struct CategoryCard: View {
-    let category: MandalartCategory
+    @Binding var category: MandalartCategory
     let isExpanded: Bool
     let onTap: () -> Void
+    let onSave: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -93,13 +103,20 @@ struct CategoryCard: View {
             // Expanded: all blocks as editable rows
             if isExpanded {
                 VStack(spacing: 10) {
+                    TextField("サブテーマ名", text: $category.title)
+                        .font(.system(size: 18, weight: .black))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 4)
+                        .textInputAutocapitalization(.never)
+
                     Text("このサブテーマを構成する8つのアクション要素です。これらを達成することで「\(category.title)」が現実のものになります。")
                         .font(.system(size: 12))
                         .foregroundColor(Color.zinc400)
                         .padding(.horizontal, 20)
                         .padding(.bottom, 4)
 
-                    ForEach(Array(category.blocks.enumerated()), id: \.element.id) { index, block in
+                    ForEach(Array(category.blocks.indices), id: \.self) { index in
                         HStack(spacing: 12) {
                             Text("\(index + 1)")
                                 .font(.system(size: 11, weight: .bold, design: .monospaced))
@@ -107,11 +124,12 @@ struct CategoryCard: View {
                                 .frame(width: 28, height: 28)
                                 .background(category.color.primary)
                                 .clipShape(Circle())
-                            Text(block.title)
+                            TextField("アクションを入力", text: $category.blocks[index].title)
                                 .font(.system(size: 14, weight: .medium))
                                 .foregroundColor(.white)
+                                .textInputAutocapitalization(.never)
                             Spacer()
-                            if block.cleared {
+                            if category.blocks[index].cleared {
                                 Image(systemName: "checkmark.circle.fill")
                                     .foregroundColor(Color(hex: "facc15"))
                             }
@@ -124,7 +142,7 @@ struct CategoryCard: View {
                     }
 
                     // Save button
-                    Button(action: {}) {
+                    Button(action: onSave) {
                         Label("変更を保存", systemImage: "checkmark")
                             .font(.system(size: 15, weight: .bold))
                             .foregroundColor(.white)

@@ -1,12 +1,15 @@
 import SwiftUI
 
 struct ResultView: View {
+    @EnvironmentObject private var vm: AppViewModel
     @State private var displayedRate: Int = 0
     @State private var pulseScale: CGFloat = 1.0
     @State private var pulseOpacity: Double = 0.3
     @State private var navigateToJournal = false
 
-    private let targetRate = 45
+    private var targetRate: Int { vm.todayCompletionRate }
+    private var completedActions: Int { vm.todayCompletedCount }
+    private var remainingActions: Int { max(vm.totalTaskCount - vm.todayCompletedCount, 0) }
 
     private var isHighRate:   Bool { targetRate >= 80 }
     private var isMediumRate: Bool { targetRate >= 60 && targetRate < 80 }
@@ -124,11 +127,11 @@ struct ResultView: View {
                             }
                             // Stats row
                             HStack(spacing: 16) {
-                                statItem(label: "現在地", value: "35", unit: "項目")
+                                statItem(label: "完了", value: "\(completedActions)", unit: "項目")
                                 Rectangle()
                                     .fill(Color.stone200)
                                     .frame(width: 1, height: 28)
-                                statItem(label: "目標", value: "80", unit: "項目")
+                                statItem(label: "全体", value: "\(vm.totalTaskCount)", unit: "項目")
                             }
                             .padding(.top, 8)
                         }
@@ -231,7 +234,7 @@ struct ResultView: View {
                 iconColor: Color(hex: "16a34a"),
                 badge: "Action",
                 title: "実行できたアクション",
-                count: "4",
+                count: "\(completedActions)",
                 unit: "項目"
             )
 
@@ -241,7 +244,7 @@ struct ResultView: View {
                 iconColor: Color(hex: "9333ea"),
                 badge: "To Do",
                 title: "これからのアクション",
-                count: "28",
+                count: "\(remainingActions)",
                 unit: "項目"
             )
         }

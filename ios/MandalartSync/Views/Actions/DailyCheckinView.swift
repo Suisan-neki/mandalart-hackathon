@@ -2,12 +2,16 @@ import SwiftUI
 
 struct DailyCheckinView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var tasks = DailyTask.sampleTasks
+    @EnvironmentObject private var vm: AppViewModel
+    @State private var tasks: [DailyTask] = []
+    @State private var totalCount = 0
     @State private var navigateToResult = false
 
-    private var totalCount: Int { DailyTask.sampleTasks.count }
     private var completedCount: Int { totalCount - tasks.count }
-    private var progress: Double { Double(completedCount) / Double(totalCount) }
+    private var progress: Double {
+        guard totalCount > 0 else { return 0 }
+        return Double(completedCount) / Double(totalCount)
+    }
 
     var body: some View {
         NavigationStack {
@@ -22,6 +26,13 @@ struct DailyCheckinView: View {
             .navigationBarHidden(true)
             .navigationDestination(isPresented: $navigateToResult) {
                 ResultView()
+            }
+            .onAppear {
+                if totalCount == 0 {
+                    let pending = vm.pendingDailyTasks
+                    tasks = pending.reversed()
+                    totalCount = vm.totalTaskCount
+                }
             }
         }
     }
@@ -79,9 +90,7 @@ struct DailyCheckinView: View {
                             task: task,
                             isTop: isTop,
                             onSwipe: { didComplete in
-                                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                                    _ = tasks.removeLast()
-                                }
+                                handleAnswer(didComplete ? .completed : .skipped)
                             }
                         )
                         .scaleEffect(isTop ? 1 : 0.95)
@@ -96,17 +105,23 @@ struct DailyCheckinView: View {
             // Button row
             HStack(spacing: 40) {
                 actionButton(systemImage: "xmark", color: Color.stone400, highlightColor: Color.red500) {
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                        _ = tasks.popLast()
-                    }
+                    handleAnswer(.skipped)
                 }
                 actionButton(systemImage: "checkmark", color: Color(hex: "22c55e"), highlightColor: Color(hex: "16a34a")) {
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                        _ = tasks.popLast()
-                    }
+                    handleAnswer(.completed)
                 }
             }
             .padding(.bottom, 48)
+        }
+    }
+
+    private func handleAnswer(_ answer: CheckinAnswer) {
+        guard let task = tasks.last else { return }
+
+        vm.recordCheckin(task: task, answer: answer)
+
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            _ = tasks.popLast()
         }
     }
 
@@ -139,7 +154,7 @@ struct DailyCheckinView: View {
                 Text("チェックイン完了")
                     .font(.system(size: 24, weight: .black))
                     .foregroundColor(Color.stone800)
-                Text("今日の振り返りが記録されました。\n実際のログと同期（Sync）しています…")
+                Text("今日の振り返りを記録しました。\n完了 \(vm.todayCompletedCount) 件 / 全 \(vm.totalTaskCount) 件")
                     .font(.system(size: 13))
                     .foregroundColor(Color.stone500)
                     .multilineTextAlignment(.center)
@@ -264,8 +279,29 @@ struct SwipeableCard: View {
 // MARK: - Color interpolation helper
 extension Color {
     func interpolated(to other: Color, by factor: Double) -> Color {
-        // Simple approximation: blend via opacity
-        return self
+        let clamped = min(max(factor, 0), 1)
+        let from = UIColor(self)
+        let to = UIColor(other)
+
+        var fromRed: CGFloat = 0
+        var fromGreen: CGFloat = 0
+        var fromBlue: CGFloat = 0
+        var fromAlpha: CGFloat = 0
+        var toRed: CGFloat = 0
+        var toGreen: CGFloat = 0
+        var toBlue: CGFloat = 0
+        var toAlpha: CGFloat = 0
+
+        from.getRed(&fromRed, green: &fromGreen, blue: &fromBlue, alpha: &fromAlpha)
+        to.getRed(&toRed, green: &toGreen, blue: &toBlue, alpha: &toAlpha)
+
+        return Color(
+            .sRGB,
+            red: Double(fromRed + (toRed - fromRed) * clamped),
+            green: Double(fromGreen + (toGreen - fromGreen) * clamped),
+            blue: Double(fromBlue + (toBlue - fromBlue) * clamped),
+            opacity: Double(fromAlpha + (toAlpha - fromAlpha) * clamped)
+        )
     }
 }
 

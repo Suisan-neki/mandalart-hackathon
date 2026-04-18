@@ -1,8 +1,7 @@
 import SwiftUI
 
 struct SyncJournalView: View {
-    @Environment(\.dismiss) private var dismiss
-    private let entries = JournalEntry.sampleEntries
+    @EnvironmentObject private var vm: AppViewModel
 
     var body: some View {
         ScrollView {
@@ -31,7 +30,7 @@ struct SyncJournalView: View {
                         .padding(.top, 4)
 
                     VStack(spacing: 28) {
-                        ForEach(entries) { entry in
+                        ForEach(vm.journalEntries) { entry in
                             TimelineRow(entry: entry)
                         }
                     }
