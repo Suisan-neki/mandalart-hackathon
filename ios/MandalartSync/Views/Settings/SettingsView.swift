@@ -158,6 +158,89 @@ struct SettingsView: View {
                     }
                 }
 
+                settingsSection(title: "デモ運用") {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("発表前にワンタップで状態を切り替えられます。")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(Color.stone500)
+                            .padding(.horizontal, 16)
+                            .padding(.top, 14)
+
+                        ForEach(DemoScenarioPreset.allCases) { preset in
+                            Button(action: { vm.applyDemoPreset(preset) }) {
+                                HStack(alignment: .top, spacing: 12) {
+                                    ZStack {
+                                        Circle()
+                                            .fill(vm.activeDemoPreset == preset ? Color.indigo600 : Color.stone100)
+                                            .frame(width: 32, height: 32)
+                                        Image(systemName: iconName(for: preset))
+                                            .font(.system(size: 14))
+                                            .foregroundColor(vm.activeDemoPreset == preset ? .white : Color.stone500)
+                                    }
+
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        HStack(spacing: 6) {
+                                            Text(preset.title)
+                                                .font(.system(size: 14, weight: .bold))
+                                                .foregroundColor(Color.stone800)
+                                            if vm.activeDemoPreset == preset {
+                                                Text("適用中")
+                                                    .font(.system(size: 9, weight: .bold))
+                                                    .foregroundColor(Color.indigo600)
+                                                    .padding(.horizontal, 8)
+                                                    .padding(.vertical, 4)
+                                                    .background(Color.indigo100)
+                                                    .clipShape(Capsule())
+                                            }
+                                        }
+                                        Text(preset.subtitle)
+                                            .font(.system(size: 11, weight: .medium))
+                                            .foregroundColor(Color.stone500)
+                                            .lineSpacing(3)
+                                    }
+
+                                    Spacer()
+                                }
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 12)
+                            }
+                            .buttonStyle(.plain)
+
+                            if preset != DemoScenarioPreset.allCases.last {
+                                Divider().padding(.horizontal, 16)
+                            }
+                        }
+                    }
+
+                    if let activePreset = vm.activeDemoPreset {
+                        Divider().padding(.horizontal, 16)
+
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("デモ台本: \(activePreset.title)")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(Color.stone800)
+
+                            ForEach(vm.demoScenarioSteps) { step in
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(step.title)
+                                        .font(.system(size: 12, weight: .bold))
+                                        .foregroundColor(Color.stone700)
+                                    Text(step.detail)
+                                        .font(.system(size: 11, weight: .medium))
+                                        .foregroundColor(Color.stone500)
+                                        .lineSpacing(3)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(12)
+                                .background(Color.stone50)
+                                .clipShape(RoundedRectangle(cornerRadius: 16))
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 14)
+                    }
+                }
+
                 settingsSection(title: "データ保存") {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("SwiftData")
@@ -342,6 +425,17 @@ struct SettingsView: View {
             return "一時的な通知権限で動作しています。"
         @unknown default:
             return "通知設定を確認中です。"
+        }
+    }
+
+    private func iconName(for preset: DemoScenarioPreset) -> String {
+        switch preset {
+        case .cognitiveGap:
+            return "eye.trianglebadge.exclamationmark.fill"
+        case .alignedMomentum:
+            return "checkmark.seal.fill"
+        case .apiError:
+            return "wifi.exclamationmark"
         }
     }
 }

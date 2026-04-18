@@ -79,6 +79,7 @@ final class AppViewModel: ObservableObject {
     @Published var cloudSyncStatusMessage: String = "未同期" {
         didSet { persistState() }
     }
+    @Published var activeDemoPreset: DemoScenarioPreset?
 
     static func makeModelContainer(isStoredInMemoryOnly: Bool = false) -> ModelContainer {
         do {
@@ -211,6 +212,32 @@ final class AppViewModel: ObservableObject {
         !(storedGoogleCalendarAccessToken()?.isEmpty ?? true)
     }
 
+
+    var demoScenarioSteps: [DemoScenarioStep] {
+        switch activeDemoPreset {
+        case .cognitiveGap:
+            return [
+                DemoScenarioStep(id: "gap-1", title: "1. 目標を見せる", detail: "ホームで『ハッカソンで優勝する』のマンダラートと、強い警告バナーを見せる。"),
+                DemoScenarioStep(id: "gap-2", title: "2. 行動ログを開く", detail: "ジャーナルで GitHub コミットや予定が並ぶのに、自己申告が追いついていない状態を確認する。"),
+                DemoScenarioStep(id: "gap-3", title: "3. 結果画面でズレを突きつける", detail: "認知のズレスコアと『次の一手』を見せ、怖いフィードバック体験を強調する。")
+            ]
+        case .alignedMomentum:
+            return [
+                DemoScenarioStep(id: "aligned-1", title: "1. 今日の積み上げを見る", detail: "自己申告と GitHub / Calendar が揃っている状態を提示する。"),
+                DemoScenarioStep(id: "aligned-2", title: "2. 結果画面で安心感を出す", detail: "ズレスコアが低く、前向きなメッセージになる流れを見せる。"),
+                DemoScenarioStep(id: "aligned-3", title: "3. 保存されることを示す", detail: "設定画面で SwiftData 保存と同期ドラフト更新を確認する。")
+            ]
+        case .apiError:
+            return [
+                DemoScenarioStep(id: "error-1", title: "1. 同期を押す", detail: "ホーム右上の同期ボタンを押して、失敗バナーを発生させる。"),
+                DemoScenarioStep(id: "error-2", title: "2. エラー内容を説明する", detail: "Rate limit / 認証切れを想定したメッセージで、異常系でも体験を壊さないことを示す。"),
+                DemoScenarioStep(id: "error-3", title: "3. 復帰導線を見せる", detail: "設定画面から連携設定を直せることを案内する。")
+            ]
+        case nil:
+            return []
+        }
+    }
+
     func prepareApp() async {
         await refreshNotificationAuthorizationStatus()
         if notificationsEnabled {
@@ -336,6 +363,49 @@ final class AppViewModel: ObservableObject {
 
     func updateIntenseEffectsEnabled(to enabled: Bool) {
         intenseEffectsEnabled = enabled
+    }
+
+
+    func applyDemoPreset(_ preset: DemoScenarioPreset) {
+        activeDemoPreset = preset
+
+        switch preset {
+        case .cognitiveGap:
+            mainGoal = "技育CAMPで優勝する"
+            categories = Self.makeDemoCategories()
+            journalEntries = Self.makeCognitiveGapJournalEntries(mainGoal: mainGoal)
+            gapInsights = []
+            syncErrorMessage = nil
+            lastCloudSyncAt = Date()
+            cloudSyncStatusMessage = "デモ用のズレ強調データを適用済み"
+            notificationsEnabled = true
+            intenseEffectsEnabled = true
+            analyzeCognitiveGaps(referenceDate: Self.demoReferenceDate)
+
+        case .alignedMomentum:
+            mainGoal = "技育CAMPで優勝する"
+            categories = Self.makeDemoCategories(aligned: true)
+            journalEntries = Self.makeAlignedJournalEntries(mainGoal: mainGoal)
+            gapInsights = []
+            syncErrorMessage = nil
+            lastCloudSyncAt = Date()
+            cloudSyncStatusMessage = "デモ用の順調シナリオを適用済み"
+            notificationsEnabled = true
+            intenseEffectsEnabled = false
+            analyzeCognitiveGaps(referenceDate: Self.demoReferenceDate)
+
+        case .apiError:
+            mainGoal = "技育CAMPで優勝する"
+            categories = Self.makeDemoCategories()
+            journalEntries = Self.makeCognitiveGapJournalEntries(mainGoal: mainGoal)
+            gapInsights = []
+            syncErrorMessage = "GitHub API rate limit に達しました。しばらく待つか、トークンを再設定してください。"
+            lastCloudSyncAt = nil
+            cloudSyncStatusMessage = "デモ用 API エラー状態"
+            notificationsEnabled = true
+            intenseEffectsEnabled = true
+            analyzeCognitiveGaps(referenceDate: Self.demoReferenceDate)
+        }
     }
 
     func resetAllData() {
@@ -653,6 +723,88 @@ final class AppViewModel: ObservableObject {
         center.removePendingNotificationRequests(withIdentifiers: ["cognitive-gap-feedback"])
         try? await center.add(request)
         UserDefaults.standard.set(signature, forKey: StorageKeys.lastNotifiedGapSignature)
+    }
+
+
+    private static let demoReferenceDate = Calendar.current.date(from: DateComponents(year: 2026, month: 4, day: 14, hour: 19, minute: 30)) ?? .now
+
+    private static func makeDemoCategories(aligned: Bool = false) -> [MandalartCategory] {
+        [
+            MandalartCategory(
+                id: 1, title: "GitHubで積み上げる", color: .blue,
+                blocks: [
+                    MandalartBlock(id: 101, title: "毎日3コミット出す", progress: aligned ? 92 : 55, resonance: 90, cleared: false),
+                    MandalartBlock(id: 102, title: "レビュー依頼を投げる", progress: aligned ? 88 : 35, resonance: 76, cleared: false),
+                    MandalartBlock(id: 103, title: "Issueを整理する", progress: aligned ? 75 : 42, resonance: 68, cleared: false),
+                    MandalartBlock(id: 104, title: "PR本文を改善する", progress: aligned ? 64 : 20, resonance: 58, cleared: false),
+                    MandalartBlock(id: 105, title: "READMEを磨く", progress: aligned ? 70 : 24, resonance: 52, cleared: false),
+                    MandalartBlock(id: 106, title: "デモ環境を安定化", progress: aligned ? 82 : 46, resonance: 77, cleared: false),
+                    MandalartBlock(id: 107, title: "CIエラーを潰す", progress: aligned ? 78 : 38, resonance: 66, cleared: false),
+                    MandalartBlock(id: 108, title: "タグを揃える", progress: aligned ? 65 : 18, resonance: 44, cleared: false),
+                ]
+            ),
+            MandalartCategory(
+                id: 2, title: "発表準備を進める", color: .orange,
+                blocks: [
+                    MandalartBlock(id: 201, title: "プレゼンスライドを作る", progress: aligned ? 90 : 62, resonance: 88, cleared: false),
+                    MandalartBlock(id: 202, title: "刺さる1シーンを磨く", progress: aligned ? 86 : 48, resonance: 95, cleared: false),
+                    MandalartBlock(id: 203, title: "デモ台本を書く", progress: aligned ? 92 : 60, resonance: 90, cleared: false),
+                    MandalartBlock(id: 204, title: "質疑応答を想定する", progress: aligned ? 73 : 34, resonance: 70, cleared: false),
+                    MandalartBlock(id: 205, title: "3分で話せるようにする", progress: aligned ? 85 : 41, resonance: 82, cleared: false),
+                    MandalartBlock(id: 206, title: "導入の一言を決める", progress: aligned ? 88 : 29, resonance: 76, cleared: false),
+                    MandalartBlock(id: 207, title: "比較対象を整理する", progress: aligned ? 77 : 32, resonance: 58, cleared: false),
+                    MandalartBlock(id: 208, title: "審査員への刺さりどころを言語化", progress: aligned ? 80 : 36, resonance: 74, cleared: false),
+                ]
+            ),
+            MandalartCategory(
+                id: 3, title: "行動を証拠に残す", color: .green,
+                blocks: [
+                    MandalartBlock(id: 301, title: "作業をCalendarに入れる", progress: aligned ? 82 : 30, resonance: 72, cleared: false),
+                    MandalartBlock(id: 302, title: "作業ログを毎日振り返る", progress: aligned ? 91 : 44, resonance: 84, cleared: false),
+                    MandalartBlock(id: 303, title: "終わった作業をチェックイン", progress: aligned ? 95 : 26, resonance: 94, cleared: false),
+                    MandalartBlock(id: 304, title: "進捗をメンバー共有", progress: aligned ? 70 : 22, resonance: 52, cleared: false),
+                    MandalartBlock(id: 305, title: "スクショを残す", progress: aligned ? 67 : 18, resonance: 40, cleared: false),
+                    MandalartBlock(id: 306, title: "データを翌日に持ち越さない", progress: aligned ? 88 : 28, resonance: 81, cleared: false),
+                    MandalartBlock(id: 307, title: "通知で自分を追い込む", progress: aligned ? 78 : 40, resonance: 74, cleared: false),
+                    MandalartBlock(id: 308, title: "証拠のない達成をなくす", progress: aligned ? 83 : 12, resonance: 93, cleared: false),
+                ]
+            ),
+            MandalartCategory(
+                id: 4, title: "チームの温度を上げる", color: .purple,
+                blocks: [
+                    MandalartBlock(id: 401, title: "毎朝共有タイム", progress: aligned ? 88 : 58, resonance: 76, cleared: false),
+                    MandalartBlock(id: 402, title: "詰まりをすぐ相談", progress: aligned ? 90 : 66, resonance: 88, cleared: false),
+                    MandalartBlock(id: 403, title: "役割を明文化する", progress: aligned ? 81 : 30, resonance: 64, cleared: false),
+                    MandalartBlock(id: 404, title: "不安を言葉にする", progress: aligned ? 78 : 24, resonance: 56, cleared: false),
+                    MandalartBlock(id: 405, title: "レビューをポジティブに返す", progress: aligned ? 92 : 46, resonance: 80, cleared: false),
+                    MandalartBlock(id: 406, title: "最後までやり切る", progress: aligned ? 96 : 64, resonance: 95, cleared: false),
+                    MandalartBlock(id: 407, title: "焦りを可視化する", progress: aligned ? 75 : 18, resonance: 63, cleared: false),
+                    MandalartBlock(id: 408, title: "プレッシャーを味方にする", progress: aligned ? 84 : 21, resonance: 78, cleared: false),
+                ]
+            )
+        ]
+    }
+
+    private static func makeCognitiveGapJournalEntries(mainGoal: String) -> [JournalEntry] {
+        [
+            JournalEntry(id: "demo-github-1", date: demoReferenceDate.addingTimeInterval(-60 * 60 * 5), kind: .githubCommit, source: "GitHub", systemImageName: "chevron.left.forwardslash.chevron.right", iconHex: "18181b", action: "コミットを取得しました", detail: "feat: add haptic warning banner for cognitive gap", targetGoal: mainGoal, relatedBlockId: nil),
+            JournalEntry(id: "demo-github-2", date: demoReferenceDate.addingTimeInterval(-60 * 60 * 4), kind: .githubCommit, source: "GitHub", systemImageName: "chevron.left.forwardslash.chevron.right", iconHex: "18181b", action: "コミットを取得しました", detail: "fix: tune demo flow and final pitch scene", targetGoal: mainGoal, relatedBlockId: nil),
+            JournalEntry(id: "demo-calendar-1", date: demoReferenceDate.addingTimeInterval(-60 * 60 * 3), kind: .calendarEvent, source: "Google Calendar", systemImageName: "calendar", iconHex: "2563eb", action: "予定を取得しました", detail: "刺さる1シーン確認ミーティング", targetGoal: mainGoal, relatedBlockId: nil),
+            JournalEntry(id: "demo-manual-1", date: demoReferenceDate.addingTimeInterval(-60 * 90), kind: .manualCompleted, source: "Manual", systemImageName: "checkmark.circle.fill", iconHex: "22c55e", action: "アクションを完了しました", detail: "3分で話せるようにする", targetGoal: mainGoal, relatedBlockId: 205),
+            JournalEntry(id: "demo-manual-2", date: demoReferenceDate.addingTimeInterval(-60 * 70), kind: .manualCompleted, source: "Manual", systemImageName: "checkmark.circle.fill", iconHex: "22c55e", action: "アクションを完了しました", detail: "証拠のない達成をなくす", targetGoal: mainGoal, relatedBlockId: 308),
+            JournalEntry(id: "demo-system-1", date: demoReferenceDate.addingTimeInterval(-60 * 20), kind: .system, source: "System", systemImageName: "eye.trianglebadge.exclamationmark.fill", iconHex: "dc2626", action: "認知のズレが検出されました", detail: "自己申告と客観ログの間に大きな乖離があります", targetGoal: mainGoal, relatedBlockId: nil),
+        ]
+    }
+
+    private static func makeAlignedJournalEntries(mainGoal: String) -> [JournalEntry] {
+        [
+            JournalEntry(id: "aligned-github-1", date: demoReferenceDate.addingTimeInterval(-60 * 60 * 4), kind: .githubCommit, source: "GitHub", systemImageName: "chevron.left.forwardslash.chevron.right", iconHex: "18181b", action: "コミットを取得しました", detail: "feat: add final pitch slides and demo assets", targetGoal: mainGoal, relatedBlockId: nil),
+            JournalEntry(id: "aligned-calendar-1", date: demoReferenceDate.addingTimeInterval(-60 * 60 * 3), kind: .calendarEvent, source: "Google Calendar", systemImageName: "calendar", iconHex: "2563eb", action: "予定を取得しました", detail: "プレゼン練習 3分", targetGoal: mainGoal, relatedBlockId: nil),
+            JournalEntry(id: "aligned-manual-1", date: demoReferenceDate.addingTimeInterval(-60 * 55), kind: .manualCompleted, source: "Manual", systemImageName: "checkmark.circle.fill", iconHex: "22c55e", action: "アクションを完了しました", detail: "プレゼンスライドを作る", targetGoal: mainGoal, relatedBlockId: 201),
+            JournalEntry(id: "aligned-manual-2", date: demoReferenceDate.addingTimeInterval(-60 * 40), kind: .manualCompleted, source: "Manual", systemImageName: "checkmark.circle.fill", iconHex: "22c55e", action: "アクションを完了しました", detail: "作業をCalendarに入れる", targetGoal: mainGoal, relatedBlockId: 301),
+            JournalEntry(id: "aligned-manual-3", date: demoReferenceDate.addingTimeInterval(-60 * 15), kind: .manualCompleted, source: "Manual", systemImageName: "checkmark.circle.fill", iconHex: "22c55e", action: "アクションを完了しました", detail: "詰まりをすぐ相談", targetGoal: mainGoal, relatedBlockId: 402),
+            JournalEntry(id: "aligned-system-1", date: demoReferenceDate.addingTimeInterval(-60 * 5), kind: .system, source: "System", systemImageName: "star.fill", iconHex: "22c55e", action: "記録と行動が一致しています", detail: "自己申告と客観ログがきれいに揃いました", targetGoal: mainGoal, relatedBlockId: nil),
+        ]
     }
 
     private func dayIdentifier(from date: Date) -> String {

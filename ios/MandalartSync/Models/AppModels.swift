@@ -238,6 +238,43 @@ struct CloudSyncEnvelope: Codable {
     let intenseEffectsEnabled: Bool
 }
 
+// MARK: - Demo Mode
+enum DemoScenarioPreset: String, CaseIterable, Identifiable {
+    case cognitiveGap
+    case alignedMomentum
+    case apiError
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .cognitiveGap:
+            return "刺さる1シーン"
+        case .alignedMomentum:
+            return "順調に進んでいる日"
+        case .apiError:
+            return "APIエラー再現"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .cognitiveGap:
+            return "自己申告と客観ログがズレている状態を再現"
+        case .alignedMomentum:
+            return "努力とログが一致している安心パターン"
+        case .apiError:
+            return "同期失敗時の見せ方を検証"
+        }
+    }
+}
+
+struct DemoScenarioStep: Identifiable {
+    let id: String
+    let title: String
+    let detail: String
+}
+
 // MARK: - SwiftData Models
 @Model
 final class StoredCategory {
