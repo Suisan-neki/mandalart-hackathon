@@ -30,6 +30,17 @@ struct HomeView: View {
         .navigationDestination(isPresented: $navigateToJournal) {
             SyncJournalView()
         }
+        .alert(
+            "同期エラー",
+            isPresented: Binding(
+                get: { vm.syncErrorMessage != nil },
+                set: { if !$0 { vm.syncErrorMessage = nil } }
+            )
+        ) {
+            Button("閉じる", role: .cancel) {}
+        } message: {
+            Text(vm.syncErrorMessage ?? "")
+        }
     }
 
     // MARK: - Header

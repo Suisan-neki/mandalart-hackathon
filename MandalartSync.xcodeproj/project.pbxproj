@@ -12,33 +12,43 @@
 		30510F2F8D2DA1DE0619095D /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BB58C68ACD51FEFE62B6060 /* HomeView.swift */; };
 		3071129EB80F676AEA1B5EC2 /* DailyCheckinView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 427A43F18A06FAA93691FD61 /* DailyCheckinView.swift */; };
 		3614F7B9C6B3D44186F7A5F7 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69FEA2D1A87AC12CAD3FED44 /* ContentView.swift */; };
+		5170BC591FE89DF6C243B414 /* GitHubSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D8B1BC38FD89D6415AEFE34 /* GitHubSettingsView.swift */; };
 		55BCE78193ED079866FD4A41 /* ResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81572150CA67FB3988226990 /* ResultView.swift */; };
+		61FDF88B59B3AFA865868387 /* GitHubService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0317E61C95689B349C38C11 /* GitHubService.swift */; };
 		7278AE0FBA064A7D45C01933 /* Color+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE0A2FB6F6642C3EF6BE3760 /* Color+Hex.swift */; };
 		752D49F63015D23D6C330C61 /* MandalartListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1758A5909568E93C34AEB106 /* MandalartListView.swift */; };
+		79D2B3CD29C4B6C8D0C2AFA0 /* GoogleCalendarSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA98CF0E595F9ED9D944246 /* GoogleCalendarSettingsView.swift */; };
 		8CCA153B552EA814EABBEFF6 /* MandalartSyncApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23656B2AE0557D95CC51F62F /* MandalartSyncApp.swift */; };
+		A44E5AE7986D34FBD7759527 /* GoogleCalendarService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6F174386495D992A1214EA7 /* GoogleCalendarService.swift */; };
 		ABA2C36DF7EE24538453B7C6 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74D6FA8C2A7FDF43EF43F2DB /* MainTabView.swift */; };
 		AC6186EB7A5F3262C7917638 /* AppViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D14A4A8075029A6213B9262 /* AppViewModel.swift */; };
 		B373F630F3FA76551FBF93DA /* BlockMandalartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD454EE6A2B0CF9397DC2A93 /* BlockMandalartView.swift */; };
 		B65AFE6454A1732679F88683 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3D6A33DE9E5A20D54B0D54CB /* Assets.xcassets */; };
 		D31048247E96D2109679629B /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00D410DB148BE227CFAD061E /* SettingsView.swift */; };
+		EBEB2BADC3FA6880CA8976EB /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96BAADEC5A83FA06590F0BD7 /* KeychainStore.swift */; };
 		F9551369D0D1D38E7D62C7F6 /* SyncJournalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9EAD018D0A114976DE89D91 /* SyncJournalView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		00D410DB148BE227CFAD061E /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		0AA98CF0E595F9ED9D944246 /* GoogleCalendarSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleCalendarSettingsView.swift; sourceTree = "<group>"; };
 		1758A5909568E93C34AEB106 /* MandalartListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MandalartListView.swift; sourceTree = "<group>"; };
 		23656B2AE0557D95CC51F62F /* MandalartSyncApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MandalartSyncApp.swift; sourceTree = "<group>"; };
 		2BB58C68ACD51FEFE62B6060 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		3D6A33DE9E5A20D54B0D54CB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		427A43F18A06FAA93691FD61 /* DailyCheckinView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyCheckinView.swift; sourceTree = "<group>"; };
-		597985B3BCD5B71AD9AC2D80 /* MandalartSync.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MandalartSync.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		597985B3BCD5B71AD9AC2D80 /* MandalartSync.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = MandalartSync.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		5CA8D0CB5C7881C66A96E4CC /* SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashView.swift; sourceTree = "<group>"; };
 		6123D16223BE3D483A4BED9B /* AppModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModels.swift; sourceTree = "<group>"; };
 		69FEA2D1A87AC12CAD3FED44 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		6D8B1BC38FD89D6415AEFE34 /* GitHubSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubSettingsView.swift; sourceTree = "<group>"; };
 		74D6FA8C2A7FDF43EF43F2DB /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
 		7D14A4A8075029A6213B9262 /* AppViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppViewModel.swift; sourceTree = "<group>"; };
 		81572150CA67FB3988226990 /* ResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResultView.swift; sourceTree = "<group>"; };
+		96BAADEC5A83FA06590F0BD7 /* KeychainStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainStore.swift; sourceTree = "<group>"; };
+		A6F174386495D992A1214EA7 /* GoogleCalendarService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleCalendarService.swift; sourceTree = "<group>"; };
 		BD454EE6A2B0CF9397DC2A93 /* BlockMandalartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockMandalartView.swift; sourceTree = "<group>"; };
+		C0317E61C95689B349C38C11 /* GitHubService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubService.swift; sourceTree = "<group>"; };
 		D9EAD018D0A114976DE89D91 /* SyncJournalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncJournalView.swift; sourceTree = "<group>"; };
 		DE0A2FB6F6642C3EF6BE3760 /* Color+Hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Hex.swift"; sourceTree = "<group>"; };
 		F5CD8462CD5B0B6723110418 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -62,6 +72,7 @@
 				23656B2AE0557D95CC51F62F /* MandalartSyncApp.swift */,
 				D7F0D7B9E93C5DDEE5A3DFF0 /* Extensions */,
 				7C8206134214C1B591C6F2D1 /* Models */,
+				C15BE487DE75D3B0D2AFDFCB /* Services */,
 				FF93CEDE5643EC3CB085A43D /* ViewModels */,
 				81F94583D5A3AAF56B816684 /* Views */,
 			);
@@ -95,6 +106,16 @@
 				F19B8955F4F8186A0721CC6B /* Settings */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		C15BE487DE75D3B0D2AFDFCB /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				C0317E61C95689B349C38C11 /* GitHubService.swift */,
+				A6F174386495D992A1214EA7 /* GoogleCalendarService.swift */,
+				96BAADEC5A83FA06590F0BD7 /* KeychainStore.swift */,
+			);
+			path = Services;
 			sourceTree = "<group>";
 		};
 		C2A5A409BAFF14A7A4E9821A /* Goals */ = {
@@ -143,6 +164,8 @@
 		F19B8955F4F8186A0721CC6B /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				6D8B1BC38FD89D6415AEFE34 /* GitHubSettingsView.swift */,
+				0AA98CF0E595F9ED9D944246 /* GoogleCalendarSettingsView.swift */,
 				00D410DB148BE227CFAD061E /* SettingsView.swift */,
 			);
 			path = Settings;
@@ -187,6 +210,7 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					37BEA26A7561193EE35877E3 = {
+						DevelopmentTeam = "";
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -232,7 +256,12 @@
 				7278AE0FBA064A7D45C01933 /* Color+Hex.swift in Sources */,
 				3614F7B9C6B3D44186F7A5F7 /* ContentView.swift in Sources */,
 				3071129EB80F676AEA1B5EC2 /* DailyCheckinView.swift in Sources */,
+				61FDF88B59B3AFA865868387 /* GitHubService.swift in Sources */,
+				5170BC591FE89DF6C243B414 /* GitHubSettingsView.swift in Sources */,
+				A44E5AE7986D34FBD7759527 /* GoogleCalendarService.swift in Sources */,
+				79D2B3CD29C4B6C8D0C2AFA0 /* GoogleCalendarSettingsView.swift in Sources */,
 				30510F2F8D2DA1DE0619095D /* HomeView.swift in Sources */,
+				EBEB2BADC3FA6880CA8976EB /* KeychainStore.swift in Sources */,
 				ABA2C36DF7EE24538453B7C6 /* MainTabView.swift in Sources */,
 				752D49F63015D23D6C330C61 /* MandalartListView.swift in Sources */,
 				8CCA153B552EA814EABBEFF6 /* MandalartSyncApp.swift in Sources */,
@@ -251,7 +280,6 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = M8G5K7AK43;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ios/MandalartSync/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -269,7 +297,6 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = M8G5K7AK43;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ios/MandalartSync/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;

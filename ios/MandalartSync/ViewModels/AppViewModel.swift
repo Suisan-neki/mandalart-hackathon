@@ -6,6 +6,15 @@ final class AppViewModel: ObservableObject {
         static let appState = "mandalart-sync.app-state"
     }
 
+    private enum SecretKeys {
+        static let service = "mandalart-sync.credentials"
+        static let githubToken = "github.personal-access-token"
+        static let googleCalendarToken = "google-calendar.access-token"
+    }
+
+    private let gitHubService: GitHubCommitFetching
+    private let googleCalendarService: GoogleCalendarFetching
+
     @Published var mainGoal: String {
         didSet { persistState() }
     }
@@ -27,7 +36,12 @@ final class AppViewModel: ObservableObject {
     @Published var isSyncing = false
     @Published var syncErrorMessage: String?
 
-    init() {
+    init(
+        gitHubService: GitHubCommitFetching = GitHubService(),
+        googleCalendarService: GoogleCalendarFetching = GoogleCalendarService()
+    ) {
+        self.gitHubService = gitHubService
+        self.googleCalendarService = googleCalendarService
         let state = Self.loadPersistedState()
         self.mainGoal = state.mainGoal
         self.categories = state.categories
@@ -88,6 +102,14 @@ final class AppViewModel: ObservableObject {
     var todayCompletionRate: Int {
         guard totalTaskCount > 0 else { return 0 }
         return Int((Double(todayCompletedCount) / Double(totalTaskCount) * 100).rounded())
+    }
+
+    var hasGitHubToken: Bool {
+        !(storedGitHubToken()?.isEmpty ?? true)
+    }
+
+    var hasGoogleCalendarToken: Bool {
+        !(storedGoogleCalendarAccessToken()?.isEmpty ?? true)
     }
 
     func updateCategoryTitle(categoryId: Int, title: String) {
@@ -157,6 +179,41 @@ final class AppViewModel: ObservableObject {
         journalEntries.insert(entry, at: 0)
     }
 
+    func storedGitHubToken() -> String? {
+        KeychainStore.read(service: SecretKeys.service, account: SecretKeys.githubToken)
+    }
+
+    func storedGoogleCalendarAccessToken() -> String? {
+        KeychainStore.read(service: SecretKeys.service, account: SecretKeys.googleCalendarToken)
+    }
+
+    func updateGitHubSettings(owner: String, repository: String, token: String) {
+        githubSettings.owner = owner.trimmingCharacters(in: .whitespacesAndNewlines)
+        githubSettings.repository = repository.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let trimmedToken = token.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedToken.isEmpty {
+            KeychainStore.delete(service: SecretKeys.service, account: SecretKeys.githubToken)
+            githubSettings.hasPersonalAccessToken = false
+        } else {
+            KeychainStore.save(trimmedToken, service: SecretKeys.service, account: SecretKeys.githubToken)
+            githubSettings.hasPersonalAccessToken = true
+        }
+    }
+
+    func updateGoogleCalendarSettings(calendarId: String, accessToken: String) {
+        googleCalendarSettings.calendarId = calendarId.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let trimmedToken = accessToken.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedToken.isEmpty {
+            KeychainStore.delete(service: SecretKeys.service, account: SecretKeys.googleCalendarToken)
+            googleCalendarSettings.hasAccessToken = false
+        } else {
+            KeychainStore.save(trimmedToken, service: SecretKeys.service, account: SecretKeys.googleCalendarToken)
+            googleCalendarSettings.hasAccessToken = true
+        }
+    }
+
     func resetAllData() {
         let state = PersistedAppState.default
         mainGoal = state.mainGoal
@@ -165,19 +222,18 @@ final class AppViewModel: ObservableObject {
         githubSettings = state.githubSettings
         googleCalendarSettings = state.googleCalendarSettings
         notificationsEnabled = state.notificationsEnabled
+        KeychainStore.delete(service: SecretKeys.service, account: SecretKeys.githubToken)
+        KeychainStore.delete(service: SecretKeys.service, account: SecretKeys.googleCalendarToken)
         syncErrorMessage = nil
     }
 
     func triggerSync() {
+        guard !isSyncing else { return }
         isSyncing = true
         syncErrorMessage = nil
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-            self.isSyncing = false
-            self.appendSystemEntry(
-                action: "同期の準備ができました",
-                detail: "次のステップで GitHub / Google Calendar の実データ連携を追加できます。"
-            )
+        Task {
+            await syncExternalServices()
         }
     }
 
@@ -196,6 +252,88 @@ final class AppViewModel: ObservableObject {
             entry.relatedBlockId == blockId
             && Calendar.current.isDateInToday(entry.date)
             && (entry.kind == .manualCompleted || entry.kind == .manualSkipped)
+        }
+    }
+
+    private func syncExternalServices() async {
+        defer { isSyncing = false }
+
+        var summary: [String] = []
+        var failures: [String] = []
+
+        do {
+            let commits = try await gitHubService.fetchCommits(
+                owner: githubSettings.owner,
+                repository: githubSettings.repository,
+                token: storedGitHubToken()
+            )
+            let entries = commits.map { commit in
+                JournalEntry(
+                    id: "github-\(commit.sha)",
+                    date: commit.commit.author?.date ?? Date(),
+                    kind: .githubCommit,
+                    source: "GitHub",
+                    systemImageName: "chevron.left.forwardslash.chevron.right",
+                    iconHex: "18181b",
+                    action: "コミットを取得しました",
+                    detail: commit.commit.message.components(separatedBy: .newlines).first ?? "Recent commit",
+                    targetGoal: mainGoal,
+                    relatedBlockId: nil
+                )
+            }
+            replaceEntries(of: .githubCommit, with: entries)
+            summary.append("GitHub \(entries.count)件")
+        } catch {
+            failures.append(error.localizedDescription)
+        }
+
+        if let token = storedGoogleCalendarAccessToken(),
+           !token.isEmpty,
+           !googleCalendarSettings.calendarId.isEmpty {
+            do {
+                let events = try await googleCalendarService.fetchUpcomingEvents(
+                    calendarId: googleCalendarSettings.calendarId,
+                    accessToken: token
+                )
+                let entries = events.map { event in
+                    JournalEntry(
+                        id: "calendar-\(event.id)",
+                        date: event.start.dateTime ?? Date(),
+                        kind: .calendarEvent,
+                        source: "Google Calendar",
+                        systemImageName: "calendar",
+                        iconHex: "2563eb",
+                        action: "予定を取得しました",
+                        detail: event.summary ?? "無題の予定",
+                        targetGoal: mainGoal,
+                        relatedBlockId: nil
+                    )
+                }
+                replaceEntries(of: .calendarEvent, with: entries)
+                summary.append("Google Calendar \(entries.count)件")
+            } catch {
+                failures.append(error.localizedDescription)
+            }
+        } else {
+            summary.append("Google Calendar 未設定")
+        }
+
+        if summary.isEmpty {
+            appendSystemEntry(
+                action: "同期対象が未設定です",
+                detail: "設定画面で GitHub / Google Calendar の連携先を入力してください。"
+            )
+        } else {
+            appendSystemEntry(
+                action: failures.isEmpty ? "同期が完了しました" : "一部の同期が完了しました",
+                detail: summary.joined(separator: " / ")
+            )
+        }
+
+        if failures.isEmpty {
+            syncErrorMessage = nil
+        } else {
+            syncErrorMessage = failures.joined(separator: "\n")
         }
     }
 

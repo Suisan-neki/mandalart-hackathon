@@ -1,7 +1,16 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @State private var notificationsEnabled = true
+    @EnvironmentObject private var vm: AppViewModel
+    @State private var activeSheet: SettingsSheet?
+    @State private var showResetAlert = false
+
+    private enum SettingsSheet: String, Identifiable {
+        case github
+        case googleCalendar
+
+        var id: String { rawValue }
+    }
 
     var body: some View {
         ScrollView {
@@ -11,31 +20,32 @@ struct SettingsView: View {
                     serviceRow(
                         iconName: "chevron.left.forwardslash.chevron.right",
                         iconBg: Color.stone900,
-                        label: "GitHub（連携済み）",
+                        label: "GitHub",
                         trailing: {
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 13))
-                                .foregroundColor(Color.stone300)
+                            serviceStatusBadge(
+                                text: "\(vm.githubSettings.owner)/\(vm.githubSettings.repository)",
+                                tint: Color.stone600,
+                                background: Color.stone100
+                            )
+                        },
+                        action: {
+                            activeSheet = .github
                         }
                     )
                     Divider().padding(.horizontal, 16)
                     serviceRow(
                         iconName: "calendar",
                         iconBg: Color(hex: "2563eb"),
-                        label: "Google Calendar（未連携）",
+                        label: "Google Calendar",
                         trailing: {
-                            HStack(spacing: 8) {
-                                Text("設定する")
-                                    .font(.system(size: 9, weight: .bold))
-                                    .foregroundColor(Color.red500)
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .background(Color.red500.opacity(0.08))
-                                    .clipShape(Capsule())
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 13))
-                                    .foregroundColor(Color.stone300)
-                            }
+                            serviceStatusBadge(
+                                text: vm.hasGoogleCalendarToken ? vm.googleCalendarSettings.calendarId : "未設定",
+                                tint: vm.hasGoogleCalendarToken ? Color(hex: "2563eb") : Color.red500,
+                                background: vm.hasGoogleCalendarToken ? Color(hex: "dbeafe") : Color.red500.opacity(0.08)
+                            )
+                        },
+                        action: {
+                            activeSheet = .googleCalendar
                         }
                     )
                 }
@@ -58,9 +68,9 @@ struct SettingsView: View {
                         }
                         Spacer()
                         // Custom toggle
-                        ZStack(alignment: notificationsEnabled ? .trailing : .leading) {
+                        ZStack(alignment: vm.notificationsEnabled ? .trailing : .leading) {
                             Capsule()
-                                .fill(notificationsEnabled ? Color.red500 : Color.stone300)
+                                .fill(vm.notificationsEnabled ? Color.red500 : Color.stone300)
                                 .frame(width: 44, height: 24)
                             Circle()
                                 .fill(.white)
@@ -70,7 +80,7 @@ struct SettingsView: View {
                         }
                         .onTapGesture {
                             withAnimation(.spring(response: 0.3)) {
-                                notificationsEnabled.toggle()
+                                vm.notificationsEnabled.toggle()
                             }
                         }
                     }
@@ -79,7 +89,7 @@ struct SettingsView: View {
 
                     Divider().padding(.horizontal, 16)
 
-                    Button(action: {}) {
+                    Button(action: { showResetAlert = true }) {
                         HStack(spacing: 12) {
                             ZStack {
                                 Circle()
@@ -110,6 +120,8 @@ struct SettingsView: View {
                             Image(systemName: "chevron.right")
                                 .font(.system(size: 13))
                                 .foregroundColor(Color.stone300)
+                        },
+                        action: {
                         }
                     )
                     Divider().padding(.horizontal, 16)
@@ -122,6 +134,8 @@ struct SettingsView: View {
                             Image(systemName: "chevron.right")
                                 .font(.system(size: 13))
                                 .foregroundColor(Color.stone300)
+                        },
+                        action: {
                         }
                     )
                 }
@@ -139,6 +153,24 @@ struct SettingsView: View {
         .background(Color.stone50.ignoresSafeArea())
         .navigationTitle("設定")
         .navigationBarTitleDisplayMode(.large)
+        .sheet(item: $activeSheet) { sheet in
+            switch sheet {
+            case .github:
+                GitHubSettingsView()
+                    .environmentObject(vm)
+            case .googleCalendar:
+                GoogleCalendarSettingsView()
+                    .environmentObject(vm)
+            }
+        }
+        .alert("すべてのデータをリセットしますか？", isPresented: $showResetAlert) {
+            Button("キャンセル", role: .cancel) {}
+            Button("リセット", role: .destructive) {
+                vm.resetAllData()
+            }
+        } message: {
+            Text("目標、記録、連携設定を初期状態に戻します。")
+        }
     }
 
     // MARK: - Section Builder
@@ -170,9 +202,10 @@ struct SettingsView: View {
         iconBg: Color,
         iconFg: Color = .white,
         label: String,
-        @ViewBuilder trailing: () -> Trailing
+        @ViewBuilder trailing: () -> Trailing,
+        action: @escaping () -> Void
     ) -> some View {
-        Button(action: {}) {
+        Button(action: action) {
             HStack(spacing: 12) {
                 ZStack {
                     Circle()
@@ -192,6 +225,21 @@ struct SettingsView: View {
             .padding(.vertical, 14)
         }
         .buttonStyle(.plain)
+    }
+
+    private func serviceStatusBadge(text: String, tint: Color, background: Color) -> some View {
+        HStack(spacing: 8) {
+            Text(text)
+                .font(.system(size: 9, weight: .bold))
+                .foregroundColor(tint)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(background)
+                .clipShape(Capsule())
+            Image(systemName: "chevron.right")
+                .font(.system(size: 13))
+                .foregroundColor(Color.stone300)
+        }
     }
 }
 
