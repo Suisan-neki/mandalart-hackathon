@@ -103,6 +103,38 @@ struct JournalEntry: Identifiable, Codable, Equatable {
     }()
 }
 
+// MARK: - Cognitive Gap
+enum CognitiveGapSeverity: String, Codable, CaseIterable {
+    case aligned
+    case caution
+    case warning
+    case critical
+
+    var rank: Int {
+        switch self {
+        case .aligned: return 0
+        case .caution: return 1
+        case .warning: return 2
+        case .critical: return 3
+        }
+    }
+}
+
+struct CognitiveGapInsight: Identifiable, Codable, Equatable {
+    let id: String
+    let generatedAt: Date
+    let blockId: Int
+    let blockTitle: String
+    let categoryTitle: String
+    let score: Int
+    let severity: CognitiveGapSeverity
+    let selfReportedCompleted: Bool
+    let matchedEvidenceCount: Int
+    let matchedSources: [String]
+    let summary: String
+    let recommendation: String
+}
+
 // MARK: - Service Settings
 struct GitHubSettings: Codable, Equatable {
     var owner: String
@@ -131,6 +163,7 @@ struct PersistedAppState: Codable {
     var mainGoal: String
     var categories: [MandalartCategory]
     var journalEntries: [JournalEntry]
+    var gapInsights: [CognitiveGapInsight]
     var githubSettings: GitHubSettings
     var googleCalendarSettings: GoogleCalendarSettings
     var notificationsEnabled: Bool
@@ -139,10 +172,50 @@ struct PersistedAppState: Codable {
         mainGoal: "最強のエンジニアになる",
         categories: MandalartCategory.sampleData,
         journalEntries: JournalEntry.sampleEntries,
+        gapInsights: [],
         githubSettings: .default,
         googleCalendarSettings: .default,
         notificationsEnabled: true
     )
+
+    private enum CodingKeys: String, CodingKey {
+        case mainGoal
+        case categories
+        case journalEntries
+        case gapInsights
+        case githubSettings
+        case googleCalendarSettings
+        case notificationsEnabled
+    }
+
+    init(
+        mainGoal: String,
+        categories: [MandalartCategory],
+        journalEntries: [JournalEntry],
+        gapInsights: [CognitiveGapInsight],
+        githubSettings: GitHubSettings,
+        googleCalendarSettings: GoogleCalendarSettings,
+        notificationsEnabled: Bool
+    ) {
+        self.mainGoal = mainGoal
+        self.categories = categories
+        self.journalEntries = journalEntries
+        self.gapInsights = gapInsights
+        self.githubSettings = githubSettings
+        self.googleCalendarSettings = googleCalendarSettings
+        self.notificationsEnabled = notificationsEnabled
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.mainGoal = try container.decode(String.self, forKey: .mainGoal)
+        self.categories = try container.decode([MandalartCategory].self, forKey: .categories)
+        self.journalEntries = try container.decode([JournalEntry].self, forKey: .journalEntries)
+        self.gapInsights = try container.decodeIfPresent([CognitiveGapInsight].self, forKey: .gapInsights) ?? []
+        self.githubSettings = try container.decodeIfPresent(GitHubSettings.self, forKey: .githubSettings) ?? .default
+        self.googleCalendarSettings = try container.decodeIfPresent(GoogleCalendarSettings.self, forKey: .googleCalendarSettings) ?? .default
+        self.notificationsEnabled = try container.decodeIfPresent(Bool.self, forKey: .notificationsEnabled) ?? true
+    }
 }
 
 // MARK: - Sample Data

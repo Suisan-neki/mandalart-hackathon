@@ -57,8 +57,8 @@ struct ResultView: View {
                     .padding(.horizontal, 24)
                     .padding(.top, 28)
 
-                // Calendar insights
-                calendarInsightsSection
+                // Cognitive gap insights
+                cognitiveGapSection
                     .padding(.horizontal, 24)
                     .padding(.top, 28)
                     .padding(.bottom, 60)
@@ -284,60 +284,125 @@ struct ResultView: View {
         .shadow(color: .black.opacity(0.03), radius: 6, y: 2)
     }
 
-    // MARK: - Calendar Insights
-    private var calendarInsightsSection: some View {
+    // MARK: - Cognitive Gap Insights
+    private var cognitiveGapSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Label("カレンダーインサイト", systemImage: "calendar")
-                .font(.system(size: 13, weight: .bold))
-                .foregroundColor(Color.stone800)
+            HStack {
+                Label("認知のズレ分析", systemImage: "eye.trianglebadge.exclamationmark")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(Color.stone800)
+                Spacer()
+                Text("\(vm.cognitiveGapScore)")
+                    .font(.system(size: 20, weight: .black, design: .rounded))
+                    .foregroundColor(Color.red600)
+                Text("/100")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(Color.stone400)
+            }
 
-            insightButton(
-                iconName: "calendar",
-                iconBg: Color(hex: "dbeafe"),
-                iconColor: Color(hex: "2563eb"),
-                title: "時間資源の配分",
-                subtitle: "予定と目標を紐付けて未来をデザインする"
-            ) {}
+            if vm.topGapInsights.isEmpty {
+                insightCard(
+                    iconName: "checkmark.seal.fill",
+                    iconBg: Color(hex: "dcfce7"),
+                    iconColor: Color(hex: "16a34a"),
+                    title: "大きなズレはまだ検出されていません",
+                    subtitle: "チェックインと同期を増やすと、ここに分析結果が出ます。"
+                )
+            } else {
+                ForEach(vm.topGapInsights) { insight in
+                    insightCard(
+                        iconName: iconName(for: insight.severity),
+                        iconBg: backgroundColor(for: insight.severity),
+                        iconColor: foregroundColor(for: insight.severity),
+                        title: insight.blockTitle,
+                        subtitle: insight.summary
+                    )
+                }
+            }
 
-            insightButton(
-                iconName: "sparkles",
-                iconBg: Color(hex: "e0e7ff"),
-                iconColor: Color(hex: "4f46e5"),
-                title: "今週の振り返り",
-                subtitle: "カレンダーのデータから次へのヒントを見つける"
-            ) {}
+            if let top = vm.mostCriticalGap {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("次の一手")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(Color.stone500)
+                        .tracking(1)
+                    Text(top.recommendation)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(Color.stone700)
+                        .lineSpacing(4)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(16)
+                .background(.white.opacity(0.8))
+                .clipShape(RoundedRectangle(cornerRadius: 20))
+                .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.stone100))
+            }
         }
     }
 
-    private func insightButton(iconName: String, iconBg: Color, iconColor: Color, title: String, subtitle: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 14) {
-                ZStack {
-                    Circle().fill(iconBg).frame(width: 40, height: 40)
-                    Image(systemName: iconName)
-                        .font(.system(size: 17))
-                        .foregroundColor(iconColor)
-                }
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(Color.stone800)
-                    Text(subtitle)
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(Color.stone500)
-                }
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12))
-                    .foregroundColor(Color.stone400)
+    private func insightCard(iconName: String, iconBg: Color, iconColor: Color, title: String, subtitle: String) -> some View {
+        HStack(spacing: 14) {
+            ZStack {
+                Circle().fill(iconBg).frame(width: 40, height: 40)
+                Image(systemName: iconName)
+                    .font(.system(size: 17))
+                    .foregroundColor(iconColor)
             }
-            .padding(18)
-            .background(.white)
-            .clipShape(RoundedRectangle(cornerRadius: 22))
-            .overlay(RoundedRectangle(cornerRadius: 22).stroke(Color.stone100))
-            .shadow(color: .black.opacity(0.03), radius: 6, y: 2)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(Color.stone800)
+                Text(subtitle)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(Color.stone500)
+                    .lineSpacing(3)
+            }
+            Spacer()
         }
-        .buttonStyle(.plain)
+        .padding(18)
+        .background(.white)
+        .clipShape(RoundedRectangle(cornerRadius: 22))
+        .overlay(RoundedRectangle(cornerRadius: 22).stroke(Color.stone100))
+        .shadow(color: .black.opacity(0.03), radius: 6, y: 2)
+    }
+
+    private func iconName(for severity: CognitiveGapSeverity) -> String {
+        switch severity {
+        case .aligned:
+            return "checkmark.seal.fill"
+        case .caution:
+            return "exclamationmark.circle.fill"
+        case .warning:
+            return "exclamationmark.triangle.fill"
+        case .critical:
+            return "eye.trianglebadge.exclamationmark.fill"
+        }
+    }
+
+    private func backgroundColor(for severity: CognitiveGapSeverity) -> Color {
+        switch severity {
+        case .aligned:
+            return Color(hex: "dcfce7")
+        case .caution:
+            return Color(hex: "fef3c7")
+        case .warning:
+            return Color(hex: "fee2e2")
+        case .critical:
+            return Color(hex: "ede9fe")
+        }
+    }
+
+    private func foregroundColor(for severity: CognitiveGapSeverity) -> Color {
+        switch severity {
+        case .aligned:
+            return Color(hex: "16a34a")
+        case .caution:
+            return Color(hex: "d97706")
+        case .warning:
+            return Color(hex: "dc2626")
+        case .critical:
+            return Color(hex: "6d28d9")
+        }
     }
 
     // MARK: - Animate rate counter

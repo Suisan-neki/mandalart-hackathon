@@ -80,12 +80,20 @@ struct SettingsView: View {
                         }
                         .onTapGesture {
                             withAnimation(.spring(response: 0.3)) {
-                                vm.notificationsEnabled.toggle()
+                                vm.updateNotificationsEnabled(to: !vm.notificationsEnabled)
                             }
                         }
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 14)
+
+                    if vm.notificationsEnabled {
+                        Text(notificationStatusText)
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(Color.stone500)
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 12)
+                    }
 
                     Divider().padding(.horizontal, 16)
 
@@ -239,6 +247,21 @@ struct SettingsView: View {
             Image(systemName: "chevron.right")
                 .font(.system(size: 13))
                 .foregroundColor(Color.stone300)
+        }
+    }
+
+    private var notificationStatusText: String {
+        switch vm.notificationAuthorizationStatus {
+        case .authorized, .provisional:
+            return "認知のズレが大きいときにローカル通知でフィードバックします。"
+        case .denied:
+            return "通知が無効です。必要なら iPhone の設定から再度許可してください。"
+        case .notDetermined:
+            return "初回起動時に通知許可を確認します。"
+        case .ephemeral:
+            return "一時的な通知権限で動作しています。"
+        @unknown default:
+            return "通知設定を確認中です。"
         }
     }
 }

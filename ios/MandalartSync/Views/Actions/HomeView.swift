@@ -5,6 +5,7 @@ struct HomeView: View {
     @State private var progressWidth: CGFloat = 0
     @State private var navigateToCheckin = false
     @State private var navigateToJournal = false
+    @State private var navigateToResult = false
 
     var body: some View {
         ScrollView {
@@ -29,6 +30,9 @@ struct HomeView: View {
         }
         .navigationDestination(isPresented: $navigateToJournal) {
             SyncJournalView()
+        }
+        .navigationDestination(isPresented: $navigateToResult) {
+            ResultView()
         }
         .alert(
             "同期エラー",
@@ -299,7 +303,7 @@ struct HomeView: View {
 
     // MARK: - Goal Review Banner
     private var goalReviewBanner: some View {
-        Button(action: {}) {
+        Button(action: { navigateToResult = true }) {
             HStack(spacing: 14) {
                 Image(systemName: "bell.badge.fill")
                     .font(.system(size: 18))
@@ -310,14 +314,14 @@ struct HomeView: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 4) {
-                        Text("目標を見直す時期かも？")
+                        Text(vm.mostCriticalGap?.severity == .critical ? "自己認識にズレが出ています" : "目標を見直す時期かも？")
                             .font(.system(size: 13, weight: .bold))
                             .foregroundColor(Color(hex: "312e81"))
                         Image(systemName: "sparkles")
                             .font(.system(size: 10))
                             .foregroundColor(Color.indigo400)
                     }
-                    Text("1ヶ月が経過しました。現在の目標は今のあなたにフィットしていますか？")
+                    Text(vm.mostCriticalGap?.summary ?? "1ヶ月が経過しました。現在の目標は今のあなたにフィットしていますか？")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundColor(Color(hex: "4338ca").opacity(0.8))
                         .lineSpacing(2)

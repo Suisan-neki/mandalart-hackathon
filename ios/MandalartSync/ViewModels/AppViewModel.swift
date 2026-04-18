@@ -1,9 +1,11 @@
 import SwiftUI
+import UserNotifications
 
 @MainActor
 final class AppViewModel: ObservableObject {
     private enum StorageKeys {
         static let appState = "mandalart-sync.app-state"
+        static let lastNotifiedGapSignature = "mandalart-sync.last-notified-gap-signature"
     }
 
     private enum SecretKeys {
@@ -24,6 +26,9 @@ final class AppViewModel: ObservableObject {
     @Published var journalEntries: [JournalEntry] {
         didSet { persistState() }
     }
+    @Published var gapInsights: [CognitiveGapInsight] {
+        didSet { persistState() }
+    }
     @Published var githubSettings: GitHubSettings {
         didSet { persistState() }
     }
@@ -35,6 +40,7 @@ final class AppViewModel: ObservableObject {
     }
     @Published var isSyncing = false
     @Published var syncErrorMessage: String?
+    @Published var notificationAuthorizationStatus: UNAuthorizationStatus = .notDetermined
 
     init(
         gitHubService: GitHubCommitFetching = GitHubService(),
@@ -46,6 +52,7 @@ final class AppViewModel: ObservableObject {
         self.mainGoal = state.mainGoal
         self.categories = state.categories
         self.journalEntries = state.journalEntries.sorted { $0.date > $1.date }
+        self.gapInsights = state.gapInsights.sorted { $0.score > $1.score }
         self.githubSettings = state.githubSettings
         self.googleCalendarSettings = state.googleCalendarSettings
         self.notificationsEnabled = state.notificationsEnabled
@@ -104,12 +111,35 @@ final class AppViewModel: ObservableObject {
         return Int((Double(todayCompletedCount) / Double(totalTaskCount) * 100).rounded())
     }
 
+    var cognitiveGapScore: Int {
+        let relevant = gapInsights.filter { $0.severity != .aligned }
+        guard !relevant.isEmpty else { return 0 }
+        let total = relevant.prefix(5).reduce(0) { $0 + $1.score }
+        return Int((Double(total) / Double(min(relevant.count, 5))).rounded())
+    }
+
+    var topGapInsights: [CognitiveGapInsight] {
+        Array(gapInsights.prefix(3))
+    }
+
+    var mostCriticalGap: CognitiveGapInsight? {
+        gapInsights.first { $0.severity.rank >= CognitiveGapSeverity.warning.rank }
+    }
+
     var hasGitHubToken: Bool {
         !(storedGitHubToken()?.isEmpty ?? true)
     }
 
     var hasGoogleCalendarToken: Bool {
         !(storedGoogleCalendarAccessToken()?.isEmpty ?? true)
+    }
+
+    func prepareApp() async {
+        await refreshNotificationAuthorizationStatus()
+        if notificationsEnabled {
+            await requestNotificationPermissionIfNeeded()
+        }
+        analyzeCognitiveGaps()
     }
 
     func updateCategoryTitle(categoryId: Int, title: String) {
@@ -155,6 +185,7 @@ final class AppViewModel: ObservableObject {
         )
 
         journalEntries.insert(entry, at: 0)
+        analyzeCognitiveGaps()
     }
 
     func replaceEntries(of kind: JournalEntryKind, with entries: [JournalEntry]) {
@@ -214,16 +245,30 @@ final class AppViewModel: ObservableObject {
         }
     }
 
+    func updateNotificationsEnabled(to enabled: Bool) {
+        notificationsEnabled = enabled
+        if enabled {
+            Task {
+                await requestNotificationPermissionIfNeeded()
+                analyzeCognitiveGaps()
+            }
+        } else {
+            UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["cognitive-gap-feedback"])
+        }
+    }
+
     func resetAllData() {
         let state = PersistedAppState.default
         mainGoal = state.mainGoal
         categories = state.categories
         journalEntries = state.journalEntries
+        gapInsights = state.gapInsights
         githubSettings = state.githubSettings
         googleCalendarSettings = state.googleCalendarSettings
         notificationsEnabled = state.notificationsEnabled
         KeychainStore.delete(service: SecretKeys.service, account: SecretKeys.githubToken)
         KeychainStore.delete(service: SecretKeys.service, account: SecretKeys.googleCalendarToken)
+        UserDefaults.standard.removeObject(forKey: StorageKeys.lastNotifiedGapSignature)
         syncErrorMessage = nil
     }
 
@@ -335,6 +380,196 @@ final class AppViewModel: ObservableObject {
         } else {
             syncErrorMessage = failures.joined(separator: "\n")
         }
+
+        analyzeCognitiveGaps()
+    }
+
+    private func analyzeCognitiveGaps(referenceDate: Date = .now) {
+        let objectiveEntries = journalEntries.filter { entry in
+            (entry.kind == .githubCommit || entry.kind == .calendarEvent)
+            && entry.date >= Calendar.current.date(byAdding: .day, value: -7, to: referenceDate)!
+        }
+
+        let selfReportedLookup: [Int: JournalEntry] = Dictionary(uniqueKeysWithValues: todayCheckinEntries.compactMap { entry in
+            guard let blockId = entry.relatedBlockId else { return nil }
+            return (blockId, entry)
+        })
+
+        let insights = allDailyTasks.compactMap { task -> CognitiveGapInsight? in
+            let matchedEntries = objectiveEntries.filter { entry in
+                entryMatchesTask(entry, task: task)
+            }
+            let selfReport = selfReportedLookup[task.blockId]
+            let selfReportedCompleted = selfReport?.kind == .manualCompleted
+            let selfReportedSkipped = selfReport?.kind == .manualSkipped
+
+            guard selfReport != nil || !matchedEntries.isEmpty else {
+                return nil
+            }
+
+            let matchedSources = Array(Set(matchedEntries.map(\.source))).sorted()
+
+            let score: Int
+            let severity: CognitiveGapSeverity
+            let summary: String
+            let recommendation: String
+
+            if selfReportedCompleted && matchedEntries.isEmpty {
+                score = 88
+                severity = .critical
+                summary = "「\(task.title)」は完了で記録されていますが、GitHub や Calendar に裏付けが見つかっていません。"
+                recommendation = "証跡になるコミットや予定を残すか、自己申告を見直してください。"
+            } else if selfReportedSkipped && !matchedEntries.isEmpty {
+                score = min(78, 55 + matchedEntries.count * 8)
+                severity = .warning
+                summary = "「\(task.title)」は見送り扱いですが、関連する客観ログが \(matchedEntries.count) 件あります。"
+                recommendation = "行動した分をチェックインに反映して、自己認識を更新しましょう。"
+            } else if !selfReportedCompleted && !matchedEntries.isEmpty {
+                score = min(72, 48 + matchedEntries.count * 8)
+                severity = matchedEntries.count >= 2 ? .warning : .caution
+                summary = "「\(task.title)」に関連する客観ログが \(matchedEntries.count) 件ありますが、自己申告が追いついていません。"
+                recommendation = "できた行動を振り返りに記録して、自分の進捗を過小評価しないようにしましょう。"
+            } else if selfReportedCompleted && !matchedEntries.isEmpty {
+                score = max(8, 24 - matchedEntries.count * 6)
+                severity = .aligned
+                summary = "「\(task.title)」は自己申告と客観ログが整合しています。"
+                recommendation = "この調子で、行動と記録の一致を積み上げましょう。"
+            } else {
+                score = 20
+                severity = .aligned
+                summary = "「\(task.title)」は今のところ大きなズレは見つかっていません。"
+                recommendation = "次の行動が見えたら、そのまま記録までつなげましょう。"
+            }
+
+            return CognitiveGapInsight(
+                id: "gap-\(task.blockId)",
+                generatedAt: referenceDate,
+                blockId: task.blockId,
+                blockTitle: task.title,
+                categoryTitle: task.category,
+                score: score,
+                severity: severity,
+                selfReportedCompleted: selfReportedCompleted,
+                matchedEvidenceCount: matchedEntries.count,
+                matchedSources: matchedSources,
+                summary: summary,
+                recommendation: recommendation
+            )
+        }
+        .sorted {
+            if $0.score == $1.score {
+                return $0.blockTitle < $1.blockTitle
+            }
+            return $0.score > $1.score
+        }
+
+        gapInsights = insights
+
+        Task {
+            await scheduleGapNotificationIfNeeded(referenceDate: referenceDate)
+        }
+    }
+
+    private func entryMatchesTask(_ entry: JournalEntry, task: DailyTask) -> Bool {
+        let haystack = normalize("\(entry.source) \(entry.action) \(entry.detail) \(entry.targetGoal)")
+        return keywords(for: task).contains { keyword in
+            keyword.count >= 2 && haystack.contains(keyword)
+        }
+    }
+
+    private func keywords(for task: DailyTask) -> Set<String> {
+        let baseStrings = [task.title, task.category, mainGoal]
+        var tokens = Set(baseStrings.map(normalize).filter { !$0.isEmpty })
+
+        let synonymMap: [String: [String]] = [
+            "コーディング": ["code", "coding", "swift", "ios", "app", "実装", "開発", "commit"],
+            "OSS": ["oss", "pr", "pullrequest", "issue", "repo", "repository", "github", "commit"],
+            "ブログ": ["blog", "qiita", "note", "article", "記事", "発信"],
+            "Twitter": ["twitter", "tweet", "post", "x", "発信"],
+            "筋トレ": ["gym", "workout", "training", "exercise", "筋トレ"],
+            "ランニング": ["run", "running", "jog", "ランニング"],
+            "睡眠": ["sleep", "rest", "睡眠"],
+            "技術": ["swift", "ios", "code", "commit", "開発", "実装"],
+            "発信": ["blog", "qiita", "note", "tweet", "post", "発信"],
+            "健康": ["health", "workout", "sleep", "gym", "run", "筋トレ"],
+            "マインド": ["mind", "reflection", "gratitude", "振り返り", "感謝"],
+            "フィードバック": ["feedback", "review", "comment", "フィードバック"],
+            "ミーティング": ["meeting", "1on1", "mtg", "ミーティング"]
+        ]
+
+        for source in baseStrings {
+            for (key, values) in synonymMap where source.localizedCaseInsensitiveContains(key) {
+                values.map(normalize).forEach { tokens.insert($0) }
+            }
+        }
+
+        return tokens
+    }
+
+    private func normalize(_ string: String) -> String {
+        string
+            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+            .lowercased()
+            .replacingOccurrences(of: "[\\s\\p{P}\\p{S}]+", with: "", options: .regularExpression)
+    }
+
+    private func requestNotificationPermissionIfNeeded() async {
+        let center = UNUserNotificationCenter.current()
+        let settings = await center.notificationSettings()
+
+        if settings.authorizationStatus == .notDetermined {
+            _ = try? await center.requestAuthorization(options: [.alert, .badge, .sound])
+        }
+
+        await refreshNotificationAuthorizationStatus()
+    }
+
+    private func refreshNotificationAuthorizationStatus() async {
+        let settings = await UNUserNotificationCenter.current().notificationSettings()
+        notificationAuthorizationStatus = settings.authorizationStatus
+    }
+
+    private func scheduleGapNotificationIfNeeded(referenceDate: Date) async {
+        guard notificationsEnabled else { return }
+        guard let insight = mostCriticalGap else { return }
+        guard insight.severity.rank >= CognitiveGapSeverity.warning.rank else { return }
+
+        await refreshNotificationAuthorizationStatus()
+        guard notificationAuthorizationStatus == .authorized || notificationAuthorizationStatus == .provisional else {
+            return
+        }
+
+        let signature = "\(insight.id)-\(dayIdentifier(from: referenceDate))-\(insight.score)"
+        if UserDefaults.standard.string(forKey: StorageKeys.lastNotifiedGapSignature) == signature {
+            return
+        }
+
+        let content = UNMutableNotificationContent()
+        content.title = insight.severity == .critical
+            ? "今日の「やったつもり」、証拠が足りません"
+            : "自己認識と行動ログにズレがあります"
+        content.body = "\(insight.blockTitle): \(insight.recommendation)"
+        content.sound = .default
+        content.badge = 1
+
+        let request = UNNotificationRequest(
+            identifier: "cognitive-gap-feedback",
+            content: content,
+            trigger: UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+        )
+
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: ["cognitive-gap-feedback"])
+        try? await center.add(request)
+        UserDefaults.standard.set(signature, forKey: StorageKeys.lastNotifiedGapSignature)
+    }
+
+    private func dayIdentifier(from date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar.current
+        formatter.locale = Locale(identifier: "ja_JP")
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: date)
     }
 
     private func persistState() {
@@ -342,6 +577,7 @@ final class AppViewModel: ObservableObject {
             mainGoal: mainGoal,
             categories: categories,
             journalEntries: journalEntries,
+            gapInsights: gapInsights,
             githubSettings: githubSettings,
             googleCalendarSettings: googleCalendarSettings,
             notificationsEnabled: notificationsEnabled
