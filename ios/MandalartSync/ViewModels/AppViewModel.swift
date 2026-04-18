@@ -1,5 +1,31 @@
 import SwiftUI
+import SwiftData
 import UserNotifications
+
+protocol CloudSyncing {
+    func push(_ envelope: CloudSyncEnvelope) throws
+}
+
+struct LocalCloudSyncDraftService: CloudSyncing {
+    func push(_ envelope: CloudSyncEnvelope) throws {
+        let directory = try FileManager.default.url(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask,
+            appropriateFor: nil,
+            create: true
+        )
+        .appendingPathComponent("CloudSync", isDirectory: true)
+
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+        let url = directory.appendingPathComponent("firestore-sync-draft.json")
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        encoder.dateEncodingStrategy = .iso8601
+        let data = try encoder.encode(envelope)
+        try data.write(to: url, options: .atomic)
+    }
+}
 
 @MainActor
 final class AppViewModel: ObservableObject {
@@ -16,6 +42,9 @@ final class AppViewModel: ObservableObject {
 
     private let gitHubService: GitHubCommitFetching
     private let googleCalendarService: GoogleCalendarFetching
+    private let cloudSyncService: CloudSyncing
+    private let modelContext: ModelContext
+    private var isPersistingState = false
 
     @Published var mainGoal: String {
         didSet { persistState() }
@@ -41,14 +70,54 @@ final class AppViewModel: ObservableObject {
     @Published var isSyncing = false
     @Published var syncErrorMessage: String?
     @Published var notificationAuthorizationStatus: UNAuthorizationStatus = .notDetermined
+    @Published var lastCloudSyncAt: Date? {
+        didSet { persistState() }
+    }
+    @Published var cloudSyncStatusMessage: String = "未同期" {
+        didSet { persistState() }
+    }
+
+    static func makeModelContainer(isStoredInMemoryOnly: Bool = false) -> ModelContainer {
+        do {
+            let configuration = ModelConfiguration(isStoredInMemoryOnly: isStoredInMemoryOnly)
+            return try ModelContainer(
+                for: StoredCategory.self,
+                StoredBlock.self,
+                StoredJournalEntry.self,
+                StoredGapInsight.self,
+                StoredSettings.self,
+                configurations: configuration
+            )
+        } catch {
+            fatalError("SwiftData container creation failed: \(error)")
+        }
+    }
+
+    convenience init(
+        gitHubService: GitHubCommitFetching = GitHubService(),
+        googleCalendarService: GoogleCalendarFetching = GoogleCalendarService(),
+        cloudSyncService: CloudSyncing = LocalCloudSyncDraftService()
+    ) {
+        let container = Self.makeModelContainer(isStoredInMemoryOnly: true)
+        self.init(
+            modelContext: container.mainContext,
+            gitHubService: gitHubService,
+            googleCalendarService: googleCalendarService,
+            cloudSyncService: cloudSyncService
+        )
+    }
 
     init(
+        modelContext: ModelContext,
         gitHubService: GitHubCommitFetching = GitHubService(),
-        googleCalendarService: GoogleCalendarFetching = GoogleCalendarService()
+        googleCalendarService: GoogleCalendarFetching = GoogleCalendarService(),
+        cloudSyncService: CloudSyncing = LocalCloudSyncDraftService()
     ) {
+        self.modelContext = modelContext
         self.gitHubService = gitHubService
         self.googleCalendarService = googleCalendarService
-        let state = Self.loadPersistedState()
+        self.cloudSyncService = cloudSyncService
+        let state = Self.loadPersistedState(modelContext: modelContext) ?? Self.loadPersistedState()
         self.mainGoal = state.mainGoal
         self.categories = state.categories
         self.journalEntries = state.journalEntries.sorted { $0.date > $1.date }
@@ -56,6 +125,10 @@ final class AppViewModel: ObservableObject {
         self.githubSettings = state.githubSettings
         self.googleCalendarSettings = state.googleCalendarSettings
         self.notificationsEnabled = state.notificationsEnabled
+        let storedSettings = Self.loadStoredSettings(modelContext: modelContext)
+        self.lastCloudSyncAt = storedSettings?.lastCloudSyncAt
+        self.cloudSyncStatusMessage = storedSettings?.cloudSyncStatusMessage ?? "未同期"
+        persistState()
     }
 
     var weeklyProgress: Double {
@@ -266,6 +339,8 @@ final class AppViewModel: ObservableObject {
         githubSettings = state.githubSettings
         googleCalendarSettings = state.googleCalendarSettings
         notificationsEnabled = state.notificationsEnabled
+        lastCloudSyncAt = nil
+        cloudSyncStatusMessage = "未同期"
         KeychainStore.delete(service: SecretKeys.service, account: SecretKeys.githubToken)
         KeychainStore.delete(service: SecretKeys.service, account: SecretKeys.googleCalendarToken)
         UserDefaults.standard.removeObject(forKey: StorageKeys.lastNotifiedGapSignature)
@@ -379,6 +454,13 @@ final class AppViewModel: ObservableObject {
             syncErrorMessage = nil
         } else {
             syncErrorMessage = failures.joined(separator: "\n")
+        }
+
+        if failures.isEmpty {
+            lastCloudSyncAt = Date()
+            cloudSyncStatusMessage = summary.joined(separator: " / ")
+        } else {
+            cloudSyncStatusMessage = failures.joined(separator: "\n")
         }
 
         analyzeCognitiveGaps()
@@ -573,6 +655,10 @@ final class AppViewModel: ObservableObject {
     }
 
     private func persistState() {
+        guard !isPersistingState else { return }
+        isPersistingState = true
+        defer { isPersistingState = false }
+
         let state = PersistedAppState(
             mainGoal: mainGoal,
             categories: categories,
@@ -583,8 +669,180 @@ final class AppViewModel: ObservableObject {
             notificationsEnabled: notificationsEnabled
         )
 
+        persistStateToSwiftData(state)
+        persistCloudSyncDraft(state)
+
         guard let data = try? JSONEncoder().encode(state) else { return }
         UserDefaults.standard.set(data, forKey: StorageKeys.appState)
+    }
+
+    private func persistStateToSwiftData(_ state: PersistedAppState) {
+        do {
+            // Settings
+            let settings = Self.loadStoredSettings(modelContext: modelContext)
+                ?? {
+                    let record = StoredSettings(
+                        mainGoal: state.mainGoal,
+                        githubOwner: state.githubSettings.owner,
+                        githubRepository: state.githubSettings.repository,
+                        githubHasPersonalAccessToken: state.githubSettings.hasPersonalAccessToken,
+                        googleCalendarID: state.googleCalendarSettings.calendarId,
+                        googleCalendarHasAccessToken: state.googleCalendarSettings.hasAccessToken,
+                        notificationsEnabled: state.notificationsEnabled
+                    )
+                    modelContext.insert(record)
+                    return record
+                }()
+
+            settings.mainGoal = state.mainGoal
+            settings.githubOwner = state.githubSettings.owner
+            settings.githubRepository = state.githubSettings.repository
+            settings.githubHasPersonalAccessToken = state.githubSettings.hasPersonalAccessToken
+            settings.googleCalendarID = state.googleCalendarSettings.calendarId
+            settings.googleCalendarHasAccessToken = state.googleCalendarSettings.hasAccessToken
+            settings.notificationsEnabled = state.notificationsEnabled
+            settings.lastCloudSyncAt = lastCloudSyncAt
+            settings.cloudSyncStatusMessage = cloudSyncStatusMessage
+
+            // Replace category tree
+            try modelContext.fetch(FetchDescriptor<StoredCategory>())
+                .forEach { modelContext.delete($0) }
+            try modelContext.save()
+
+            for category in state.categories {
+                let categoryRecord = StoredCategory(
+                    id: category.id,
+                    title: category.title,
+                    colorRaw: category.color.rawValue
+                )
+                modelContext.insert(categoryRecord)
+
+                for block in category.blocks {
+                    let blockRecord = StoredBlock(
+                        id: block.id,
+                        title: block.title,
+                        progress: block.progress,
+                        resonance: block.resonance,
+                        cleared: block.cleared,
+                        category: categoryRecord
+                    )
+                    categoryRecord.blocks.append(blockRecord)
+                    modelContext.insert(blockRecord)
+                }
+            }
+
+            // Replace journals
+            try modelContext.fetch(FetchDescriptor<StoredJournalEntry>())
+                .forEach { modelContext.delete($0) }
+            try modelContext.save()
+
+            for entry in state.journalEntries {
+                modelContext.insert(
+                    StoredJournalEntry(
+                        id: entry.id,
+                        date: entry.date,
+                        kindRaw: entry.kind.rawValue,
+                        source: entry.source,
+                        systemImageName: entry.systemImageName,
+                        iconHex: entry.iconHex,
+                        action: entry.action,
+                        detail: entry.detail,
+                        targetGoal: entry.targetGoal,
+                        relatedBlockId: entry.relatedBlockId
+                    )
+                )
+            }
+
+            // Replace gap insights
+            try modelContext.fetch(FetchDescriptor<StoredGapInsight>())
+                .forEach { modelContext.delete($0) }
+            try modelContext.save()
+
+            for insight in state.gapInsights {
+                modelContext.insert(
+                    StoredGapInsight(
+                        id: insight.id,
+                        generatedAt: insight.generatedAt,
+                        blockId: insight.blockId,
+                        blockTitle: insight.blockTitle,
+                        categoryTitle: insight.categoryTitle,
+                        score: insight.score,
+                        severityRaw: insight.severity.rawValue,
+                        selfReportedCompleted: insight.selfReportedCompleted,
+                        matchedEvidenceCount: insight.matchedEvidenceCount,
+                        matchedSourcesRaw: insight.matchedSources.joined(separator: ","),
+                        summary: insight.summary,
+                        recommendation: insight.recommendation
+                    )
+                )
+            }
+
+            try modelContext.save()
+        } catch {
+            cloudSyncStatusMessage = "SwiftData 保存失敗: \(error.localizedDescription)"
+        }
+    }
+
+    private func persistCloudSyncDraft(_ state: PersistedAppState) {
+        let envelope = CloudSyncEnvelope(
+            exportedAt: Date(),
+            mainGoal: state.mainGoal,
+            categories: state.categories,
+            journalEntries: state.journalEntries,
+            gapInsights: state.gapInsights,
+            githubSettings: state.githubSettings,
+            googleCalendarSettings: state.googleCalendarSettings,
+            notificationsEnabled: state.notificationsEnabled
+        )
+
+        do {
+            try cloudSyncService.push(envelope)
+        } catch {
+            cloudSyncStatusMessage = "クラウド同期ドラフト更新失敗: \(error.localizedDescription)"
+        }
+    }
+
+    private static func loadStoredSettings(modelContext: ModelContext) -> StoredSettings? {
+        try? modelContext.fetch(FetchDescriptor<StoredSettings>()).first
+    }
+
+    private static func loadPersistedState(modelContext: ModelContext) -> PersistedAppState? {
+        guard let settings = loadStoredSettings(modelContext: modelContext) else {
+            return nil
+        }
+
+        let categories = (try? modelContext.fetch(FetchDescriptor<StoredCategory>()))?
+            .sorted { $0.id < $1.id }
+            .map(MandalartCategory.init(record:)) ?? []
+
+        let journalEntries = (try? modelContext.fetch(FetchDescriptor<StoredJournalEntry>()))?
+            .sorted { $0.date > $1.date }
+            .map(JournalEntry.init(record:)) ?? []
+
+        let gapInsights = (try? modelContext.fetch(FetchDescriptor<StoredGapInsight>()))?
+            .sorted { $0.score > $1.score }
+            .map(CognitiveGapInsight.init(record:)) ?? []
+
+        guard !categories.isEmpty || !journalEntries.isEmpty || !gapInsights.isEmpty else {
+            return nil
+        }
+
+        return PersistedAppState(
+            mainGoal: settings.mainGoal,
+            categories: categories.isEmpty ? PersistedAppState.default.categories : categories,
+            journalEntries: journalEntries.isEmpty ? PersistedAppState.default.journalEntries : journalEntries,
+            gapInsights: gapInsights,
+            githubSettings: GitHubSettings(
+                owner: settings.githubOwner,
+                repository: settings.githubRepository,
+                hasPersonalAccessToken: settings.githubHasPersonalAccessToken
+            ),
+            googleCalendarSettings: GoogleCalendarSettings(
+                calendarId: settings.googleCalendarID,
+                hasAccessToken: settings.googleCalendarHasAccessToken
+            ),
+            notificationsEnabled: settings.notificationsEnabled
+        )
     }
 
     private static func loadPersistedState() -> PersistedAppState {

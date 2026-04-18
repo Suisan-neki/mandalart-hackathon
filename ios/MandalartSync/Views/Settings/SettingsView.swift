@@ -117,6 +117,45 @@ struct SettingsView: View {
                     }
                 }
 
+                settingsSection(title: "データ保存") {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("SwiftData")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(Color.stone800)
+                        Text("マンダラート、チェックイン、同期ログ、認知のズレ分析は端末内に保存されます。")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(Color.stone500)
+                            .lineSpacing(3)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 14)
+
+                    Divider().padding(.horizontal, 16)
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("クラウド同期ドラフト")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(Color.stone800)
+                        Text(vm.cloudSyncStatusMessage)
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(Color.stone500)
+                            .lineSpacing(3)
+                        if let lastSynced = vm.lastCloudSyncAt {
+                            Text("最終更新: \(lastSynced.formatted(date: .abbreviated, time: .shortened))")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundColor(Color.stone400)
+                        } else {
+                            Text("Firebase 接続前の下書きペイロードをローカルに保持しています。")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundColor(Color.stone400)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+                }
+
                 // Legal / Other
                 settingsSection(title: "その他") {
                     serviceRow(

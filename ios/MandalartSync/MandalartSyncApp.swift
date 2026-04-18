@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 import UserNotifications
 
 final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
@@ -22,7 +23,14 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
 @main
 struct MandalartSyncApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
-    @StateObject private var viewModel = AppViewModel()
+    private let modelContainer: ModelContainer
+    @StateObject private var viewModel: AppViewModel
+
+    init() {
+        let container = AppViewModel.makeModelContainer()
+        self.modelContainer = container
+        _viewModel = StateObject(wrappedValue: AppViewModel(modelContext: container.mainContext))
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -32,5 +40,6 @@ struct MandalartSyncApp: App {
                     await viewModel.prepareApp()
                 }
         }
+        .modelContainer(modelContainer)
     }
 }

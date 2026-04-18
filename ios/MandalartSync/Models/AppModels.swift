@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 // MARK: - Category Color
 enum CategoryColor: String, CaseIterable, Identifiable, Codable {
@@ -215,6 +216,238 @@ struct PersistedAppState: Codable {
         self.githubSettings = try container.decodeIfPresent(GitHubSettings.self, forKey: .githubSettings) ?? .default
         self.googleCalendarSettings = try container.decodeIfPresent(GoogleCalendarSettings.self, forKey: .googleCalendarSettings) ?? .default
         self.notificationsEnabled = try container.decodeIfPresent(Bool.self, forKey: .notificationsEnabled) ?? true
+    }
+}
+
+// MARK: - Cloud Sync Envelope
+struct CloudSyncEnvelope: Codable {
+    let exportedAt: Date
+    let mainGoal: String
+    let categories: [MandalartCategory]
+    let journalEntries: [JournalEntry]
+    let gapInsights: [CognitiveGapInsight]
+    let githubSettings: GitHubSettings
+    let googleCalendarSettings: GoogleCalendarSettings
+    let notificationsEnabled: Bool
+}
+
+// MARK: - SwiftData Models
+@Model
+final class StoredCategory {
+    @Attribute(.unique) var id: Int
+    var title: String
+    var colorRaw: String
+    @Relationship(deleteRule: .cascade, inverse: \StoredBlock.category) var blocks: [StoredBlock]
+
+    init(id: Int, title: String, colorRaw: String, blocks: [StoredBlock] = []) {
+        self.id = id
+        self.title = title
+        self.colorRaw = colorRaw
+        self.blocks = blocks
+    }
+}
+
+@Model
+final class StoredBlock {
+    @Attribute(.unique) var id: Int
+    var title: String
+    var progress: Double
+    var resonance: Double
+    var cleared: Bool
+    var category: StoredCategory?
+
+    init(id: Int, title: String, progress: Double, resonance: Double, cleared: Bool, category: StoredCategory? = nil) {
+        self.id = id
+        self.title = title
+        self.progress = progress
+        self.resonance = resonance
+        self.cleared = cleared
+        self.category = category
+    }
+}
+
+@Model
+final class StoredJournalEntry {
+    @Attribute(.unique) var id: String
+    var date: Date
+    var kindRaw: String
+    var source: String
+    var systemImageName: String
+    var iconHex: String
+    var action: String
+    var detail: String
+    var targetGoal: String
+    var relatedBlockId: Int?
+
+    init(
+        id: String,
+        date: Date,
+        kindRaw: String,
+        source: String,
+        systemImageName: String,
+        iconHex: String,
+        action: String,
+        detail: String,
+        targetGoal: String,
+        relatedBlockId: Int?
+    ) {
+        self.id = id
+        self.date = date
+        self.kindRaw = kindRaw
+        self.source = source
+        self.systemImageName = systemImageName
+        self.iconHex = iconHex
+        self.action = action
+        self.detail = detail
+        self.targetGoal = targetGoal
+        self.relatedBlockId = relatedBlockId
+    }
+}
+
+@Model
+final class StoredGapInsight {
+    @Attribute(.unique) var id: String
+    var generatedAt: Date
+    var blockId: Int
+    var blockTitle: String
+    var categoryTitle: String
+    var score: Int
+    var severityRaw: String
+    var selfReportedCompleted: Bool
+    var matchedEvidenceCount: Int
+    var matchedSourcesRaw: String
+    var summary: String
+    var recommendation: String
+
+    init(
+        id: String,
+        generatedAt: Date,
+        blockId: Int,
+        blockTitle: String,
+        categoryTitle: String,
+        score: Int,
+        severityRaw: String,
+        selfReportedCompleted: Bool,
+        matchedEvidenceCount: Int,
+        matchedSourcesRaw: String,
+        summary: String,
+        recommendation: String
+    ) {
+        self.id = id
+        self.generatedAt = generatedAt
+        self.blockId = blockId
+        self.blockTitle = blockTitle
+        self.categoryTitle = categoryTitle
+        self.score = score
+        self.severityRaw = severityRaw
+        self.selfReportedCompleted = selfReportedCompleted
+        self.matchedEvidenceCount = matchedEvidenceCount
+        self.matchedSourcesRaw = matchedSourcesRaw
+        self.summary = summary
+        self.recommendation = recommendation
+    }
+}
+
+@Model
+final class StoredSettings {
+    @Attribute(.unique) var id: String
+    var mainGoal: String
+    var githubOwner: String
+    var githubRepository: String
+    var githubHasPersonalAccessToken: Bool
+    var googleCalendarID: String
+    var googleCalendarHasAccessToken: Bool
+    var notificationsEnabled: Bool
+    var lastCloudSyncAt: Date?
+    var cloudSyncStatusMessage: String?
+
+    init(
+        id: String = "app-settings",
+        mainGoal: String,
+        githubOwner: String,
+        githubRepository: String,
+        githubHasPersonalAccessToken: Bool,
+        googleCalendarID: String,
+        googleCalendarHasAccessToken: Bool,
+        notificationsEnabled: Bool,
+        lastCloudSyncAt: Date? = nil,
+        cloudSyncStatusMessage: String? = nil
+    ) {
+        self.id = id
+        self.mainGoal = mainGoal
+        self.githubOwner = githubOwner
+        self.githubRepository = githubRepository
+        self.githubHasPersonalAccessToken = githubHasPersonalAccessToken
+        self.googleCalendarID = googleCalendarID
+        self.googleCalendarHasAccessToken = googleCalendarHasAccessToken
+        self.notificationsEnabled = notificationsEnabled
+        self.lastCloudSyncAt = lastCloudSyncAt
+        self.cloudSyncStatusMessage = cloudSyncStatusMessage
+    }
+}
+
+// MARK: - SwiftData Mapping
+extension MandalartCategory {
+    init(record: StoredCategory) {
+        self.init(
+            id: record.id,
+            title: record.title,
+            color: CategoryColor(rawValue: record.colorRaw) ?? .blue,
+            blocks: record.blocks
+                .sorted { $0.id < $1.id }
+                .map(MandalartBlock.init(record:))
+        )
+    }
+}
+
+extension MandalartBlock {
+    init(record: StoredBlock) {
+        self.init(
+            id: record.id,
+            title: record.title,
+            progress: record.progress,
+            resonance: record.resonance,
+            cleared: record.cleared
+        )
+    }
+}
+
+extension JournalEntry {
+    init(record: StoredJournalEntry) {
+        self.init(
+            id: record.id,
+            date: record.date,
+            kind: JournalEntryKind(rawValue: record.kindRaw) ?? .system,
+            source: record.source,
+            systemImageName: record.systemImageName,
+            iconHex: record.iconHex,
+            action: record.action,
+            detail: record.detail,
+            targetGoal: record.targetGoal,
+            relatedBlockId: record.relatedBlockId
+        )
+    }
+}
+
+extension CognitiveGapInsight {
+    init(record: StoredGapInsight) {
+        self.init(
+            id: record.id,
+            generatedAt: record.generatedAt,
+            blockId: record.blockId,
+            blockTitle: record.blockTitle,
+            categoryTitle: record.categoryTitle,
+            score: record.score,
+            severity: CognitiveGapSeverity(rawValue: record.severityRaw) ?? .aligned,
+            selfReportedCompleted: record.selfReportedCompleted,
+            matchedEvidenceCount: record.matchedEvidenceCount,
+            matchedSources: record.matchedSourcesRaw
+                .split(separator: ",")
+                .map(String.init)
+                .filter { !$0.isEmpty },
+            summary: record.summary,
+            recommendation: record.recommendation
+        )
     }
 }
 
