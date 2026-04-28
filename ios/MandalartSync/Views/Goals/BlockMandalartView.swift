@@ -6,6 +6,9 @@ struct BlockMandalartView: View {
     @State private var editingCategory: SelectedCategory? = nil
     @State private var isEditingMainGoal = false
     @Namespace private var ns
+    // スポットライトチュートリアル
+    @State private var tutorialStep: Int? = nil
+    @State private var screenSize: CGSize = .zero
 
     var body: some View {
         ZStack {
@@ -38,13 +41,32 @@ struct BlockMandalartView: View {
                 .padding(.bottom, 120)
             }
 
+            // Screen size tracker
+            GeometryReader { geo in
+                Color.clear
+                    .onAppear { screenSize = geo.size }
+                    .onChange(of: geo.size) { screenSize = $0 }
+            }
+            .ignoresSafeArea()
+
             // Block detail overlay
             if let sel = selectedBlock {
                 blockDetailOverlay(sel)
             }
+
+            // Spotlight tutorial overlay
+            if let step = tutorialStep {
+                spotlightOverlay(step: step)
+            }
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: vm.showMandalartTutorial) { show in
+            if show {
+                tutorialStep = 0
+                vm.showMandalartTutorial = false
+            }
+        }
         .toolbarBackground(Color.zinc950, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
         .sheet(isPresented: $isEditingMainGoal) {
@@ -120,6 +142,113 @@ struct BlockMandalartView: View {
         )
         .environmentObject(vm)
         .padding(.horizontal, 24)
+    }
+
+    // MARK: - Spotlight Tutorial
+    @ViewBuilder
+    private func spotlightOverlay(step: Int) -> some View {
+        let totalSteps = 3
+        let w = screenSize.width
+        // グリッドの各セルサイズを計算
+        // CategoryGridViewは .padding(.horizontal, 16) で内側にグリッドがあり、その内側にさらに padding(.horizontal, 16) あり
+        let gridHPad: CGFloat = 16 + 16  // outer + inner
+        let spacing: CGFloat = 8
+        let cellW = (w - gridHPad * 2 - spacing * 2) / 3
+        let cellH = cellW  // aspect 1:1
+        // ナビゲーションバーの高さ（おおよそ）
+        let navBarH: CGFloat = 44 + 47  // status bar + nav bar
+        // VStack spacing 40、レジェンドの高さ（おおよそ 28pt）、padding top 16
+        let legendH: CGFloat = 16 + 28 + 40  // paddingTop + legend + spacing
+        // CategoryGridViewのタイトル高さ（font 17 + spacing 12）
+        let catTitleH: CGFloat = 17 + 12
+        // 最初のカテゴリグリッドのY座標（スクロールなし想定）
+        let gridTopY = navBarH + legendH + catTitleH
+        // 各セルのX座標（左から）
+        let col0X = gridHPad
+        let col1X = gridHPad + cellW + spacing
+        // 各行のY座標
+        let row0Y = gridTopY
+        let row1Y = gridTopY + cellH + spacing
+        // ステップごとのハイライト対象セルの座標
+        // Step 0: 中心セル (index 4 = row1, col1)
+        // Step 1 & 2: blocks[0] (index 0 = row0, col0)
+        let highlightRect: CGRect = {
+            switch step {
+            case 0:  return CGRect(x: col1X, y: row1Y, width: cellW, height: cellH)
+            default: return CGRect(x: col0X, y: row0Y, width: cellW, height: cellH)
+            }
+        }()
+        let messages = [
+            ("カテゴリのテーマ", "中央のセルがカテゴリ名です。\nタップして目標を入力できます。"),
+            ("小さな行動を入力する", "周りの8マスに具体的な行動を入れます。\nタップして編集できます。"),
+            ("GitHub連携キーワード", "セルの詳細画面でGitHubキーワードを設定すると\nコミットが自動で記録されます。")
+        ]
+        let (msgTitle, msgBody) = step < messages.count ? messages[step] : ("", "")
+        let padding: CGFloat = 8
+        let holeRect = highlightRect.insetBy(dx: -padding, dy: -padding)
+        let cornerRadius: CGFloat = 18
+
+        ZStack(alignment: .top) {
+            // 暗幕 + 穴抜き
+            Canvas { ctx, size in
+                ctx.fill(Path(CGRect(origin: .zero, size: size)), with: .color(.black.opacity(0.72)))
+                var hole = Path()
+                hole.addRoundedRect(
+                    in: holeRect,
+                    cornerSize: CGSize(width: cornerRadius, height: cornerRadius)
+                )
+                ctx.blendMode = .destinationOut
+                ctx.fill(hole, with: .color(.white))
+            }
+            .compositingGroup()
+            .ignoresSafeArea()
+            .allowsHitTesting(false)
+
+            // ハイライト枚線
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .stroke(Color.white.opacity(0.6), lineWidth: 2)
+                .frame(width: holeRect.width, height: holeRect.height)
+                .position(x: holeRect.midX, y: holeRect.midY)
+                .allowsHitTesting(false)
+
+            // 吹き出し（ハイライトの下に表示）
+            VStack(alignment: .leading, spacing: 6) {
+                Text(msgTitle)
+                    .font(.system(size: 15, weight: .black))
+                    .foregroundColor(.white)
+                Text(msgBody)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(Color.white.opacity(0.85))
+                    .lineSpacing(4)
+                HStack {
+                    Spacer()
+                    Text(step < totalSteps - 1 ? "タップして次へ" : "タップして閉じる")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(Color.white.opacity(0.5))
+                }
+            }
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color(hex: "1c1917").opacity(0.95))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.white.opacity(0.1), lineWidth: 0.5)
+                    )
+            )
+            .padding(.horizontal, 24)
+            .offset(y: holeRect.maxY + 16)
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            withAnimation(.easeInOut(duration: 0.25)) {
+                if step < totalSteps - 1 {
+                    tutorialStep = step + 1
+                } else {
+                    tutorialStep = nil
+                }
+            }
+        }
     }
 
     // MARK: - Legend Item

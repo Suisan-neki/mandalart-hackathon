@@ -127,6 +127,36 @@ struct SettingsView: View {
                 }
 
                 settingsSection(title: "デモ運用") {
+                    Button(action: { vm.showMandalartTutorial = true }) {
+                        HStack(spacing: 12) {
+                            ZStack {
+                                Circle()
+                                    .fill(Color.indigo100)
+                                    .frame(width: 32, height: 32)
+                                Image(systemName: "questionmark.circle.fill")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(Color.indigo600)
+                            }
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("マンダラートの入力方法を見る")
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundColor(Color.stone800)
+                                Text("各セルの入力方法をスポットライトで確認できます")
+                                    .font(.system(size: 11, weight: .medium))
+                                    .foregroundColor(Color.stone500)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(Color.stone400)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 14)
+                    }
+                    .buttonStyle(.plain)
+
+                    Divider().padding(.horizontal, 16)
+
                     VStack(alignment: .leading, spacing: 10) {
                         Text("発表で見せる導線だけをここから開けます。APIエラーやオフラインのシナリオには入りません。")
                             .font(.system(size: 12, weight: .medium))
