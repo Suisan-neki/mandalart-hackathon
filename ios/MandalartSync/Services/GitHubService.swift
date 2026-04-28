@@ -1,39 +1,32 @@
 import Foundation
 
-struct GitHubCommit: Decodable {
+struct GitHubCommit: Equatable {
     let sha: String
-    let commit: CommitPayload
-
-    struct CommitPayload: Decodable {
-        let message: String
-        let author: AuthorPayload?
-    }
-
-    struct AuthorPayload: Decodable {
-        let date: Date?
-    }
+    let message: String
+    let repositoryName: String
+    let date: Date
 }
 
 protocol GitHubCommitFetching {
-    func fetchCommits(owner: String, repository: String, token: String?) async throws -> [GitHubCommit]
+    func fetchCommits(username: String, token: String?) async throws -> [GitHubCommit]
 }
 
 enum GitHubServiceError: LocalizedError {
-    case invalidRepository
+    case invalidUsername
     case unauthorized
     case forbidden
     case requestFailed
 
     var errorDescription: String? {
         switch self {
-        case .invalidRepository:
-            return "GitHub のユーザー名 / リポジトリ名が未設定です。設定から入力してください。"
+        case .invalidUsername:
+            return "GitHub のユーザー名が未設定です。設定から入力してください。"
         case .unauthorized:
             return "GitHub のトークンが無効です（401）。設定からトークンを再設定してください。"
         case .forbidden:
             return "GitHub へのアクセスが拒否されました（403）。トークンの権限を確認してください。"
         case .requestFailed:
-            return "GitHub からコミット履歴を取得できませんでした。"
+            return "GitHub からアカウントの活動履歴を取得できませんでした。"
         }
     }
 
@@ -43,14 +36,13 @@ enum GitHubServiceError: LocalizedError {
 }
 
 struct GitHubService: GitHubCommitFetching {
-    func fetchCommits(owner: String, repository: String, token: String?) async throws -> [GitHubCommit] {
-        guard !owner.isEmpty, !repository.isEmpty else {
-            throw GitHubServiceError.invalidRepository
+    func fetchCommits(username: String, token: String?) async throws -> [GitHubCommit] {
+        guard !username.isEmpty else {
+            throw GitHubServiceError.invalidUsername
         }
 
-        let escapedOwner = owner.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? owner
-        let escapedRepository = repository.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? repository
-        guard let url = URL(string: "https://api.github.com/repos/\(escapedOwner)/\(escapedRepository)/commits?per_page=10") else {
+        let escapedUsername = username.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? username
+        guard let url = URL(string: "https://api.github.com/users/\(escapedUsername)/events?per_page=100") else {
             throw GitHubServiceError.requestFailed
         }
 
@@ -63,6 +55,7 @@ struct GitHubService: GitHubCommitFetching {
         }
 
         let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
         decoder.dateDecodingStrategy = .iso8601
 
         let (data, response) = try await URLSession.shared.data(for: request)
@@ -72,7 +65,18 @@ struct GitHubService: GitHubCommitFetching {
 
         switch httpResponse.statusCode {
         case 200..<300:
-            return try decoder.decode([GitHubCommit].self, from: data)
+            let events = try decoder.decode([GitHubEvent].self, from: data)
+            return events.flatMap { event -> [GitHubCommit] in
+                guard event.type == "PushEvent" else { return [] }
+                return (event.payload.commits ?? []).map { commit in
+                    GitHubCommit(
+                        sha: commit.sha,
+                        message: commit.message,
+                        repositoryName: event.repo.name,
+                        date: event.createdAt
+                    )
+                }
+            }
         case 401:
             throw GitHubServiceError.unauthorized
         case 403:
@@ -80,5 +84,25 @@ struct GitHubService: GitHubCommitFetching {
         default:
             throw GitHubServiceError.requestFailed
         }
+    }
+}
+
+private struct GitHubEvent: Decodable {
+    let type: String
+    let repo: Repo
+    let payload: Payload
+    let createdAt: Date
+
+    struct Repo: Decodable {
+        let name: String
+    }
+
+    struct Payload: Decodable {
+        let commits: [Commit]?
+    }
+
+    struct Commit: Decodable {
+        let sha: String
+        let message: String
     }
 }

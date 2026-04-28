@@ -5,19 +5,19 @@ struct GitHubSettingsView: View {
     @EnvironmentObject private var vm: AppViewModel
 
     @State private var owner = ""
-    @State private var repository = ""
     @State private var token = ""
 
     var body: some View {
         NavigationStack {
             Form {
-                Section("リポジトリ") {
-                    TextField("ユーザー名", text: $owner)
+                Section("GitHub アカウント") {
+                    TextField("ユーザー名（例: octocat）", text: $owner)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
-                    TextField("リポジトリ名", text: $repository)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
+
+                    Text("特定のリポジトリではなく、このユーザーのGitHub EventsからPushEventを取得し、コミット件数を自動で数えます。")
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
                 }
 
                 Section("Personal Access Token") {
@@ -25,7 +25,7 @@ struct GitHubSettingsView: View {
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
 
-                    Text("公開リポジトリならトークンなしでも取得できます。非公開リポジトリやレート制限回避が必要な場合のみ PAT を入れてください。")
+                    Text("公開アクティビティならトークンなしでも取得できます。レート制限回避や認証済みユーザーとして取得したい場合のみ PAT を入れてください。")
                         .font(.footnote)
                         .foregroundColor(.secondary)
                 }
@@ -37,14 +37,13 @@ struct GitHubSettingsView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("保存") {
-                        vm.updateGitHubSettings(owner: owner, repository: repository, token: token)
+                        vm.updateGitHubSettings(owner: owner, token: token)
                         dismiss()
                     }
                 }
             }
             .onAppear {
                 owner = vm.githubSettings.owner
-                repository = vm.githubSettings.repository
                 token = vm.storedGitHubToken() ?? ""
             }
         }

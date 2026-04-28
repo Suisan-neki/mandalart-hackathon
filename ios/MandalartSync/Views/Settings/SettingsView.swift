@@ -23,9 +23,9 @@ struct SettingsView: View {
                         label: "GitHub",
                         trailing: {
                             serviceStatusBadge(
-                                text: "\(vm.githubSettings.owner)/\(vm.githubSettings.repository)",
-                                tint: Color.stone600,
-                                background: Color.stone100
+                                text: vm.githubSettings.owner.isEmpty ? "未設定" : "@\(vm.githubSettings.owner)",
+                                tint: vm.githubSettings.owner.isEmpty ? Color.red500 : Color.stone600,
+                                background: vm.githubSettings.owner.isEmpty ? Color.red500.opacity(0.08) : Color.stone100
                             )
                         },
                         action: {

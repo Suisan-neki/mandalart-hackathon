@@ -254,9 +254,9 @@ final class AppViewModel: ObservableObject {
         analyzeCognitiveGaps()
     }
 
-    /// 同期が必要な設定（GitHub owner/repo）が揃っているか
+    /// 同期が必要な設定（GitHub username）が揃っているか
     var hasSyncTarget: Bool {
-        !githubSettings.owner.isEmpty && !githubSettings.repository.isEmpty
+        !githubSettings.owner.isEmpty
     }
 
     func updateCategoryTitle(categoryId: Int, title: String) {
@@ -335,7 +335,7 @@ final class AppViewModel: ObservableObject {
         KeychainStore.read(service: SecretKeys.service, account: SecretKeys.googleCalendarToken)
     }
 
-    func updateGitHubSettings(owner: String, repository: String, token: String) {
+    func updateGitHubSettings(owner: String, repository: String = "", token: String) {
         githubSettings.owner = owner.trimmingCharacters(in: .whitespacesAndNewlines)
         githubSettings.repository = repository.trimmingCharacters(in: .whitespacesAndNewlines)
 
@@ -481,26 +481,25 @@ final class AppViewModel: ObservableObject {
 
         do {
             let commits = try await gitHubService.fetchCommits(
-                owner: githubSettings.owner,
-                repository: githubSettings.repository,
+                username: githubSettings.owner,
                 token: storedGitHubToken()
             )
             let entries = commits.map { commit in
                 JournalEntry(
                     id: "github-\(commit.sha)",
-                    date: commit.commit.author?.date ?? Date(),
+                    date: commit.date,
                     kind: .githubCommit,
-                    source: "GitHub",
+                    source: "GitHub: \(commit.repositoryName)",
                     systemImageName: "chevron.left.forwardslash.chevron.right",
                     iconHex: "18181b",
                     action: "コミットを取得しました",
-                    detail: commit.commit.message.components(separatedBy: .newlines).first ?? "Recent commit",
+                    detail: commit.message.components(separatedBy: .newlines).first ?? "Recent commit",
                     targetGoal: mainGoal,
                     relatedBlockId: nil
                 )
             }
             replaceEntries(of: .githubCommit, with: entries)
-            summary.append("GitHub \(entries.count)件")
+            summary.append("GitHub \(entries.count)コミット")
         } catch let error as GitHubServiceError {
             failures.append(error.localizedDescription)
             if error.requiresTokenReset { syncRequiresSettings = true }
@@ -582,17 +581,28 @@ final class AppViewModel: ObservableObject {
             && entry.date >= Calendar.current.date(byAdding: .day, value: -7, to: referenceDate)!
         }
 
-        // GitHubコミットがあるアクションのみ分析対象にする
         let insights = allDailyTasks.compactMap { task -> CognitiveGapInsight? in
-            let matchedCommits = githubEntries.filter { entry in
-                entryMatchesTask(entry, task: task)
+            let targetCommitCount = githubCommitTarget(for: task)
+            let matchedCommits: [JournalEntry]
+
+            if targetCommitCount != nil {
+                let startOfToday = Calendar.current.startOfDay(for: referenceDate)
+                matchedCommits = githubEntries.filter { entry in
+                    entry.date >= startOfToday && entry.date <= referenceDate
+                }
+            } else {
+                matchedCommits = githubEntries.filter { entry in
+                    entryMatchesTask(entry, task: task)
+                }
             }
 
             // GitHubコミットがなければ分析対象外
-            guard !matchedCommits.isEmpty else { return nil }
+            guard !matchedCommits.isEmpty || targetCommitCount != nil else { return nil }
 
             let matchedSources = Array(Set(matchedCommits.map(\.source))).sorted()
-            let score = max(8, 20 - matchedCommits.count * 5)
+            let target = targetCommitCount ?? 1
+            let achieved = matchedCommits.count >= target
+            let score = targetCommitCount == nil ? max(8, 20 - matchedCommits.count * 5) : (achieved ? 8 : 65)
 
             return CognitiveGapInsight(
                 id: "gap-\(task.blockId)",
@@ -601,12 +611,16 @@ final class AppViewModel: ObservableObject {
                 blockTitle: task.title,
                 categoryTitle: task.category,
                 score: score,
-                severity: .aligned,
+                severity: achieved ? .aligned : .caution,
                 selfReportedCompleted: false,
                 matchedEvidenceCount: matchedCommits.count,
                 matchedSources: matchedSources,
-                summary: "「\(task.title)」は GitHub に \(matchedCommits.count) 件のコミットが確認できます。",
-                recommendation: "行動が積み上がっています。このまま続けましょう。"
+                summary: targetCommitCount == nil
+                    ? "「\(task.title)」は GitHub に \(matchedCommits.count) 件のコミットが確認できます。"
+                    : "今日のGitHubコミットは \(matchedCommits.count) / \(target) 件です。",
+                recommendation: achieved
+                    ? "行動が積み上がっています。このまま続けましょう。"
+                    : "コミット数で自動計測しています。目標数に届いていなければ、作業を小さく切ってpushしましょう。"
             )
         }
         .sorted {
@@ -628,6 +642,20 @@ final class AppViewModel: ObservableObject {
         return keywords(for: task).contains { keyword in
             keyword.count >= 2 && haystack.contains(keyword)
         }
+    }
+
+    private func githubCommitTarget(for task: DailyTask) -> Int? {
+        let normalizedTitle = normalize(task.title)
+        guard normalizedTitle.contains("コミット") || normalizedTitle.contains("commit") else {
+            return nil
+        }
+
+        if let range = task.title.range(of: #"\d+"#, options: .regularExpression),
+           let value = Int(task.title[range]) {
+            return max(value, 1)
+        }
+
+        return 1
     }
 
     func updateBlockGitHubKeywords(categoryId: Int, blockId: Int, keywords: [String]) {

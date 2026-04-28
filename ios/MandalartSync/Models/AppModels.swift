@@ -154,8 +154,8 @@ struct GitHubSettings: Codable, Equatable {
     var hasPersonalAccessToken: Bool
 
     static let `default` = GitHubSettings(
-        owner: "Suisan-neki",
-        repository: "mandalart-hackathon",
+        owner: "",
+        repository: "",
         hasPersonalAccessToken: false
     )
 }
@@ -570,7 +570,7 @@ extension DailyTask {
 
 extension JournalEntry {
     static let sampleEntries: [JournalEntry] = [
-        JournalEntry(id: "sample-github-1", date: .now.addingTimeInterval(-60 * 60 * 9), kind: .githubCommit, source: "GitHub", systemImageName: "chevron.left.forwardslash.chevron.right", iconHex: "18181b", action: "リポジトリにコミットしました", detail: "feat: add user authentication", targetGoal: "技術スキルの向上", relatedBlockId: 101),
+        JournalEntry(id: "sample-github-1", date: .now.addingTimeInterval(-60 * 60 * 9), kind: .githubCommit, source: "GitHub", systemImageName: "chevron.left.forwardslash.chevron.right", iconHex: "18181b", action: "GitHubにコミットしました", detail: "feat: add user authentication", targetGoal: "技術スキルの向上", relatedBlockId: 101),
         JournalEntry(id: "sample-calendar-1", date: .now.addingTimeInterval(-60 * 60 * 6), kind: .calendarEvent, source: "Google Calendar", systemImageName: "calendar", iconHex: "2563eb", action: "予定を完了しました", detail: "1on1 ミーティング", targetGoal: "チームとの信頼構築", relatedBlockId: nil),
         JournalEntry(id: "sample-manual-1", date: .now.addingTimeInterval(-60 * 60 * 3), kind: .manualCompleted, source: "Manual", systemImageName: "checkmark.circle.fill", iconHex: "22c55e", action: "アクションを完了しました", detail: "技術書を1章読む", targetGoal: "技術スキルの向上", relatedBlockId: 104),
         JournalEntry(id: "sample-system-1", date: .now.addingTimeInterval(-60 * 60), kind: .system, source: "System", systemImageName: "star.fill", iconHex: "fbbf24", action: "目標の達成率がアップ！", detail: "今日の行動が目標に大きく貢献しました", targetGoal: "全般", relatedBlockId: nil),

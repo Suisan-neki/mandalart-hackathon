@@ -19,7 +19,9 @@
 		752D49F63015D23D6C330C61 /* MandalartListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1758A5909568E93C34AEB106 /* MandalartListView.swift */; };
 		79D2B3CD29C4B6C8D0C2AFA0 /* GoogleCalendarSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AA98CF0E595F9ED9D944246 /* GoogleCalendarSettingsView.swift */; };
 		8CCA153B552EA814EABBEFF6 /* MandalartSyncApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23656B2AE0557D95CC51F62F /* MandalartSyncApp.swift */; };
+		92754EAE6B5CBC3B541EF886 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49E26C0FDED83ACECEDD0863 /* NetworkMonitor.swift */; };
 		A44E5AE7986D34FBD7759527 /* GoogleCalendarService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6F174386495D992A1214EA7 /* GoogleCalendarService.swift */; };
+		A49D3A6DDC80A88855CB68AA /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 912C244636D6F9F67ABAAC88 /* OnboardingView.swift */; };
 		ABA2C36DF7EE24538453B7C6 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74D6FA8C2A7FDF43EF43F2DB /* MainTabView.swift */; };
 		AC6186EB7A5F3262C7917638 /* AppViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D14A4A8075029A6213B9262 /* AppViewModel.swift */; };
 		B373F630F3FA76551FBF93DA /* BlockMandalartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD454EE6A2B0CF9397DC2A93 /* BlockMandalartView.swift */; };
@@ -27,8 +29,6 @@
 		D31048247E96D2109679629B /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00D410DB148BE227CFAD061E /* SettingsView.swift */; };
 		EBEB2BADC3FA6880CA8976EB /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96BAADEC5A83FA06590F0BD7 /* KeychainStore.swift */; };
 		F9551369D0D1D38E7D62C7F6 /* SyncJournalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9EAD018D0A114976DE89D91 /* SyncJournalView.swift */; };
-		AA11BB22CC33DD44EE55FF66 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11BB22CC33DD44EE55FF77 /* NetworkMonitor.swift */; };
-		BB22CC33DD44EE55FF66AA11 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB22CC33DD44EE55FF66AA22 /* OnboardingView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -39,6 +39,7 @@
 		2BB58C68ACD51FEFE62B6060 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		3D6A33DE9E5A20D54B0D54CB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		427A43F18A06FAA93691FD61 /* DailyCheckinView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyCheckinView.swift; sourceTree = "<group>"; };
+		49E26C0FDED83ACECEDD0863 /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
 		597985B3BCD5B71AD9AC2D80 /* MandalartSync.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = MandalartSync.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		5CA8D0CB5C7881C66A96E4CC /* SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashView.swift; sourceTree = "<group>"; };
 		6123D16223BE3D483A4BED9B /* AppModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModels.swift; sourceTree = "<group>"; };
@@ -47,6 +48,7 @@
 		74D6FA8C2A7FDF43EF43F2DB /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
 		7D14A4A8075029A6213B9262 /* AppViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppViewModel.swift; sourceTree = "<group>"; };
 		81572150CA67FB3988226990 /* ResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResultView.swift; sourceTree = "<group>"; };
+		912C244636D6F9F67ABAAC88 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		96BAADEC5A83FA06590F0BD7 /* KeychainStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainStore.swift; sourceTree = "<group>"; };
 		A6F174386495D992A1214EA7 /* GoogleCalendarService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleCalendarService.swift; sourceTree = "<group>"; };
 		BD454EE6A2B0CF9397DC2A93 /* BlockMandalartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockMandalartView.swift; sourceTree = "<group>"; };
@@ -54,8 +56,6 @@
 		D9EAD018D0A114976DE89D91 /* SyncJournalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncJournalView.swift; sourceTree = "<group>"; };
 		DE0A2FB6F6642C3EF6BE3760 /* Color+Hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Hex.swift"; sourceTree = "<group>"; };
 		F5CD8462CD5B0B6723110418 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		AA11BB22CC33DD44EE55FF77 /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
-		BB22CC33DD44EE55FF66AA22 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -103,8 +103,8 @@
 			isa = PBXGroup;
 			children = (
 				74D6FA8C2A7FDF43EF43F2DB /* MainTabView.swift */,
+				912C244636D6F9F67ABAAC88 /* OnboardingView.swift */,
 				5CA8D0CB5C7881C66A96E4CC /* SplashView.swift */,
-				BB22CC33DD44EE55FF66AA22 /* OnboardingView.swift */,
 				D9F892E7C1F74536B5267F27 /* Actions */,
 				C2A5A409BAFF14A7A4E9821A /* Goals */,
 				C7C33535ECB106E5223E8571 /* Records */,
@@ -119,7 +119,7 @@
 				C0317E61C95689B349C38C11 /* GitHubService.swift */,
 				A6F174386495D992A1214EA7 /* GoogleCalendarService.swift */,
 				96BAADEC5A83FA06590F0BD7 /* KeychainStore.swift */,
-				AA11BB22CC33DD44EE55FF77 /* NetworkMonitor.swift */,
+				49E26C0FDED83ACECEDD0863 /* NetworkMonitor.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -271,12 +271,12 @@
 				ABA2C36DF7EE24538453B7C6 /* MainTabView.swift in Sources */,
 				752D49F63015D23D6C330C61 /* MandalartListView.swift in Sources */,
 				8CCA153B552EA814EABBEFF6 /* MandalartSyncApp.swift in Sources */,
+				92754EAE6B5CBC3B541EF886 /* NetworkMonitor.swift in Sources */,
+				A49D3A6DDC80A88855CB68AA /* OnboardingView.swift in Sources */,
 				55BCE78193ED079866FD4A41 /* ResultView.swift in Sources */,
 				D31048247E96D2109679629B /* SettingsView.swift in Sources */,
 				1AC74AC97AD467625104A12D /* SplashView.swift in Sources */,
 				F9551369D0D1D38E7D62C7F6 /* SyncJournalView.swift in Sources */,
-				AA11BB22CC33DD44EE55FF66 /* NetworkMonitor.swift in Sources */,
-				BB22CC33DD44EE55FF66AA11 /* OnboardingView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
