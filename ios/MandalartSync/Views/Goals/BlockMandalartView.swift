@@ -334,7 +334,7 @@ struct BlockDetailView: View {
                     // Resonance bar
                     VStack(alignment: .leading, spacing: 6) {
                         HStack {
-                            Text("共鳴度")
+                            Text("同期度")
                                 .font(.system(size: 13, weight: .bold))
                                 .foregroundColor(Color.zinc400)
                             Spacer()
@@ -342,7 +342,7 @@ struct BlockDetailView: View {
                                 .font(.system(size: 13, weight: .bold))
                                 .foregroundColor(.white)
                         }
-                        Text("このアクションへの取り組み度合い")
+                        Text("目標との同期度合い")
                             .font(.system(size: 10))
                             .foregroundColor(Color.zinc500)
 

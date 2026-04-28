@@ -53,4 +53,5 @@ extension Color {
     static let amber600  = Color(hex: "d97706")
     static let red500    = Color(hex: "ef4444")
     static let red600    = Color(hex: "dc2626")
+    static let orange500 = Color(hex: "f97316")
 }

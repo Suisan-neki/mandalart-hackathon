@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import UserNotifications
+import Network
 
 protocol CloudSyncing {
     func push(_ envelope: CloudSyncEnvelope) throws
@@ -45,6 +46,7 @@ final class AppViewModel: ObservableObject {
     private let cloudSyncService: CloudSyncing
     private let modelContext: ModelContext
     private var isPersistingState = false
+    private let networkMonitor = NetworkMonitor()
 
     @Published var mainGoal: String {
         didSet { persistState() }
@@ -72,6 +74,8 @@ final class AppViewModel: ObservableObject {
     }
     @Published var isSyncing = false
     @Published var syncErrorMessage: String?
+    @Published var syncRequiresSettings = false
+    @Published var isOffline = false
     @Published var notificationAuthorizationStatus: UNAuthorizationStatus = .notDetermined
     @Published var lastCloudSyncAt: Date? {
         didSet { persistState() }
@@ -134,6 +138,10 @@ final class AppViewModel: ObservableObject {
         self.lastCloudSyncAt = storedSettings?.lastCloudSyncAt
         self.cloudSyncStatusMessage = storedSettings?.cloudSyncStatusMessage ?? "未同期"
         persistState()
+        networkMonitor.onStatusChange = { [weak self] offline in
+            self?.isOffline = offline
+        }
+        networkMonitor.start()
     }
 
     var weeklyProgress: Double {
@@ -219,12 +227,12 @@ final class AppViewModel: ObservableObject {
             return [
                 DemoScenarioStep(id: "gap-1", title: "1. 目標を見せる", detail: "ホームで『ハッカソンで優勝する』のマンダラートと、強い警告バナーを見せる。"),
                 DemoScenarioStep(id: "gap-2", title: "2. 行動ログを開く", detail: "ジャーナルで GitHub コミットや予定が並ぶのに、自己申告が追いついていない状態を確認する。"),
-                DemoScenarioStep(id: "gap-3", title: "3. 結果画面でズレを突きつける", detail: "認知のズレスコアと『次の一手』を見せ、怖いフィードバック体験を強調する。")
+                DemoScenarioStep(id: "gap-3", title: "3. 結果画面で同期状態を確認する", detail: "同期スコアと『次の一手』を見せ、行動と記録のギャップを体験してもらう。")
             ]
         case .alignedMomentum:
             return [
                 DemoScenarioStep(id: "aligned-1", title: "1. 今日の積み上げを見る", detail: "自己申告と GitHub / Calendar が揃っている状態を提示する。"),
-                DemoScenarioStep(id: "aligned-2", title: "2. 結果画面で安心感を出す", detail: "ズレスコアが低く、前向きなメッセージになる流れを見せる。"),
+                DemoScenarioStep(id: "aligned-2", title: "2. 結果画面で同期状態を確認する", detail: "同期スコアが低く、行動と記録が揃っている状態を見せる。"),
                 DemoScenarioStep(id: "aligned-3", title: "3. 保存されることを示す", detail: "設定画面で SwiftData 保存と同期ドラフト更新を確認する。")
             ]
         case .apiError:
@@ -244,6 +252,11 @@ final class AppViewModel: ObservableObject {
             await requestNotificationPermissionIfNeeded()
         }
         analyzeCognitiveGaps()
+    }
+
+    /// 同期が必要な設定（GitHub owner/repo）が揃っているか
+    var hasSyncTarget: Bool {
+        !githubSettings.owner.isEmpty && !githubSettings.repository.isEmpty
     }
 
     func updateCategoryTitle(categoryId: Int, title: String) {
@@ -377,7 +390,7 @@ final class AppViewModel: ObservableObject {
             gapInsights = []
             syncErrorMessage = nil
             lastCloudSyncAt = Date()
-            cloudSyncStatusMessage = "ズレありシナリオを適用中"
+            cloudSyncStatusMessage = "ギャップシナリオを適用中"
             notificationsEnabled = true
             intenseEffectsEnabled = true
             analyzeCognitiveGaps(referenceDate: Self.demoReferenceDate)
@@ -389,7 +402,7 @@ final class AppViewModel: ObservableObject {
             gapInsights = []
             syncErrorMessage = nil
             lastCloudSyncAt = Date()
-            cloudSyncStatusMessage = "順調シナリオを適用中"
+            cloudSyncStatusMessage = "同期済みシナリオを適用中"
             notificationsEnabled = true
             intenseEffectsEnabled = false
             analyzeCognitiveGaps(referenceDate: Self.demoReferenceDate)
@@ -399,7 +412,8 @@ final class AppViewModel: ObservableObject {
             categories = Self.makeDemoCategories()
             journalEntries = Self.makeCognitiveGapJournalEntries(mainGoal: mainGoal)
             gapInsights = []
-            syncErrorMessage = "GitHub API rate limit に達しました。しばらく待つか、トークンを再設定してください。"
+            syncErrorMessage = "GitHub のトークンが無効です（401）。設定からトークンを再設定してください。"
+            syncRequiresSettings = true
             lastCloudSyncAt = nil
             cloudSyncStatusMessage = "APIエラーシナリオを適用中"
             notificationsEnabled = true
@@ -428,8 +442,15 @@ final class AppViewModel: ObservableObject {
 
     func triggerSync() {
         guard !isSyncing else { return }
+
+        if isOffline {
+            syncErrorMessage = "オフラインです。接続を確認してから再度お試しください。"
+            return
+        }
+
         isSyncing = true
         syncErrorMessage = nil
+        syncRequiresSettings = false
 
         Task {
             await syncExternalServices()
@@ -482,6 +503,9 @@ final class AppViewModel: ObservableObject {
             }
             replaceEntries(of: .githubCommit, with: entries)
             summary.append("GitHub \(entries.count)件")
+        } catch let error as GitHubServiceError {
+            failures.append(error.localizedDescription)
+            if error.requiresTokenReset { syncRequiresSettings = true }
         } catch {
             failures.append(error.localizedDescription)
         }
@@ -510,6 +534,9 @@ final class AppViewModel: ObservableObject {
                 }
                 replaceEntries(of: .calendarEvent, with: entries)
                 summary.append("Google Calendar \(entries.count)件")
+            } catch let error as GoogleCalendarServiceError {
+                failures.append(error.localizedDescription)
+                if error.requiresTokenReset { syncRequiresSettings = true }
             } catch {
                 failures.append(error.localizedDescription)
             }
@@ -518,9 +545,10 @@ final class AppViewModel: ObservableObject {
         }
 
         if summary.isEmpty {
+            syncRequiresSettings = true
             appendSystemEntry(
-                action: "同期対象が未設定です",
-                detail: "設定画面で GitHub / Google Calendar の連携先を入力してください。"
+                action: "同期の設定が必要です",
+                detail: "設定から GitHub / Google Calendar の連携先を入力してください。"
             )
         } else {
             appendSystemEntry(
@@ -529,8 +557,12 @@ final class AppViewModel: ObservableObject {
             )
         }
 
+        // 401/403 を含む場合は設定への誤導を優先
         if failures.isEmpty {
             syncErrorMessage = nil
+            syncRequiresSettings = false
+        } else if syncRequiresSettings {
+            syncErrorMessage = failures.first
         } else {
             syncErrorMessage = failures.joined(separator: "\n")
         }
@@ -546,8 +578,9 @@ final class AppViewModel: ObservableObject {
     }
 
     private func analyzeCognitiveGaps(referenceDate: Date = .now) {
-        let objectiveEntries = journalEntries.filter { entry in
-            (entry.kind == .githubCommit || entry.kind == .calendarEvent)
+        // GitHubコミットのみを分析対象にする（Google Calendarは行動ログ表示のみ）
+        let githubEntries = journalEntries.filter { entry in
+            entry.kind == .githubCommit
             && entry.date >= Calendar.current.date(byAdding: .day, value: -7, to: referenceDate)!
         }
 
@@ -557,49 +590,55 @@ final class AppViewModel: ObservableObject {
         })
 
         let insights = allDailyTasks.compactMap { task -> CognitiveGapInsight? in
-            let matchedEntries = objectiveEntries.filter { entry in
+            // GitHubコミットがあれば自動的に実績ありとみなす
+            let matchedCommits = githubEntries.filter { entry in
                 entryMatchesTask(entry, task: task)
             }
+            let hasGitHubEvidence = !matchedCommits.isEmpty
+
             let selfReport = selfReportedLookup[task.blockId]
             let selfReportedCompleted = selfReport?.kind == .manualCompleted
             let selfReportedSkipped = selfReport?.kind == .manualSkipped
 
-            guard selfReport != nil || !matchedEntries.isEmpty else {
+            // GitHubログも手動記録もない場合は分析対象外
+            guard selfReport != nil || hasGitHubEvidence else {
                 return nil
             }
 
-            let matchedSources = Array(Set(matchedEntries.map(\.source))).sorted()
+            let matchedSources = Array(Set(matchedCommits.map(\.source))).sorted()
 
             let score: Int
             let severity: CognitiveGapSeverity
             let summary: String
             let recommendation: String
 
-            if selfReportedCompleted && matchedEntries.isEmpty {
-                score = 88
-                severity = .critical
-                summary = "「\(task.title)」は完了で記録されていますが、GitHub や Calendar に裏付けが見つかっていません。"
-                recommendation = "コミットやカレンダーに記録を残すか、チェックインを見直してみてください。"
-            } else if selfReportedSkipped && !matchedEntries.isEmpty {
-                score = min(78, 55 + matchedEntries.count * 8)
-                severity = .warning
-                summary = "「\(task.title)」は見送り扱いですが、関連する客観ログが \(matchedEntries.count) 件あります。"
-                recommendation = "実際に動いた分をチェックインに反映してみてください。"
-            } else if !selfReportedCompleted && !matchedEntries.isEmpty {
-                score = min(72, 48 + matchedEntries.count * 8)
-                severity = matchedEntries.count >= 2 ? .warning : .caution
-                summary = "「\(task.title)」に関連する客観ログが \(matchedEntries.count) 件ありますが、自己申告が追いついていません。"
-                recommendation = "行動した分をチェックインで記録しておくと、進捗が見えやすくなります。"
-            } else if selfReportedCompleted && !matchedEntries.isEmpty {
-                score = max(8, 24 - matchedEntries.count * 6)
-                severity = .aligned
-                summary = "「\(task.title)」は自己申告と客観ログが整合しています。"
-                recommendation = "行動と記録が合っています。この調子で進めましょう。"
+            if hasGitHubEvidence {
+                // GitHubコミットがある→自動的に実績あり（手動記録不要）
+                if selfReportedSkipped {
+                    // 見送りにしたのにコミットがある
+                    score = min(72, 50 + matchedCommits.count * 8)
+                    severity = .warning
+                    summary = "「\(task.title)」は見送りにしていますが、GitHub に \(matchedCommits.count) 件のコミットがあります。"
+                    recommendation = "実際に動いた分を記録してみてください。"
+                } else {
+                    // GitHubコミットあり→完了扱い
+                    score = max(8, 20 - matchedCommits.count * 5)
+                    severity = .aligned
+                    summary = "「\(task.title)」は GitHub に \(matchedCommits.count) 件のコミットが確認できます。"
+                    recommendation = "行動が積み上がっています。このまま続けましょう。"
+                }
+            } else if selfReportedCompleted {
+                // 手動記録のみ（GitHubログなし）
+                score = 45
+                severity = .caution
+                summary = "「\(task.title)」は記録済みですが、GitHub に対応するコミットが見つかりません。"
+                recommendation = "コミットを残すか、記録の内容を確認してみてください。"
             } else {
+                // 見送りのみ
                 score = 20
                 severity = .aligned
-                summary = "「\(task.title)」は今のところ大きなズレは見つかっていません。"
-                recommendation = "次の行動が見えたら、そのまま記録しておきましょう。"
+                summary = "「\(task.title)」は今日は見送りにしました。"
+                recommendation = "明日もう一度振り返ってみましょう。"
             }
 
             return CognitiveGapInsight(
@@ -707,8 +746,8 @@ final class AppViewModel: ObservableObject {
 
         let content = UNMutableNotificationContent()
         content.title = insight.severity == .critical
-            ? "記録と行動にズレがあります"
-            : "チェックインしてみませんか"
+            ? "未記録のアクションがあります"
+            : "今日の記録をつけてみませんか"
         content.body = "\(insight.blockTitle): \(insight.recommendation)"
         content.sound = .default
         content.badge = 1
@@ -761,7 +800,7 @@ final class AppViewModel: ObservableObject {
                 blocks: [
                     MandalartBlock(id: 301, title: "作業をCalendarに入れる", progress: aligned ? 82 : 30, resonance: 72, cleared: false),
                     MandalartBlock(id: 302, title: "作業ログを毎日振り返る", progress: aligned ? 91 : 44, resonance: 84, cleared: false),
-                    MandalartBlock(id: 303, title: "終わった作業をチェックイン", progress: aligned ? 95 : 26, resonance: 94, cleared: false),
+                    MandalartBlock(id: 303, title: "終わった作業を記録する", progress: aligned ? 95 : 26, resonance: 94, cleared: false),
                     MandalartBlock(id: 304, title: "進捗をメンバー共有", progress: aligned ? 70 : 22, resonance: 52, cleared: false),
                     MandalartBlock(id: 305, title: "スクショを残す", progress: aligned ? 67 : 18, resonance: 40, cleared: false),
                     MandalartBlock(id: 306, title: "データを翌日に持ち越さない", progress: aligned ? 88 : 28, resonance: 81, cleared: false),
@@ -792,7 +831,7 @@ final class AppViewModel: ObservableObject {
             JournalEntry(id: "demo-calendar-1", date: demoReferenceDate.addingTimeInterval(-60 * 60 * 3), kind: .calendarEvent, source: "Google Calendar", systemImageName: "calendar", iconHex: "2563eb", action: "予定を取得しました", detail: "刺さる1シーン確認ミーティング", targetGoal: mainGoal, relatedBlockId: nil),
             JournalEntry(id: "demo-manual-1", date: demoReferenceDate.addingTimeInterval(-60 * 90), kind: .manualCompleted, source: "Manual", systemImageName: "checkmark.circle.fill", iconHex: "22c55e", action: "アクションを完了しました", detail: "3分で話せるようにする", targetGoal: mainGoal, relatedBlockId: 205),
             JournalEntry(id: "demo-manual-2", date: demoReferenceDate.addingTimeInterval(-60 * 70), kind: .manualCompleted, source: "Manual", systemImageName: "checkmark.circle.fill", iconHex: "22c55e", action: "アクションを完了しました", detail: "証拠のない達成をなくす", targetGoal: mainGoal, relatedBlockId: 308),
-            JournalEntry(id: "demo-system-1", date: demoReferenceDate.addingTimeInterval(-60 * 20), kind: .system, source: "System", systemImageName: "eye.trianglebadge.exclamationmark.fill", iconHex: "dc2626", action: "認知のズレが検出されました", detail: "自己申告と客観ログの間に大きな乖離があります", targetGoal: mainGoal, relatedBlockId: nil),
+            JournalEntry(id: "demo-system-1", date: demoReferenceDate.addingTimeInterval(-60 * 20), kind: .system, source: "System", systemImageName: "eye.trianglebadge.exclamationmark.fill", iconHex: "dc2626", action: "記録されていないアクションがあります", detail: "外部ログに対応する記録が見つかりませんでした", targetGoal: mainGoal, relatedBlockId: nil),
         ]
     }
 

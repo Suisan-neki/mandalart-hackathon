@@ -249,7 +249,7 @@ enum DemoScenarioPreset: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .cognitiveGap:
-            return "ズレありシナリオ"
+            return "未達成・記録不足あり"
         case .alignedMomentum:
             return "順調シナリオ"
         case .apiError:
@@ -260,9 +260,9 @@ enum DemoScenarioPreset: String, CaseIterable, Identifiable {
     var subtitle: String {
         switch self {
         case .cognitiveGap:
-            return "チェックインと外部ログにズレがある状態"
+            return "記録不足や未達成のアクションがある状態"
         case .alignedMomentum:
-            return "チェックインと外部ログが一致している状態"
+            return "記録と外部ログが一致している状態"
         case .apiError:
             return "同期失敗時の動作を確認する"
         }

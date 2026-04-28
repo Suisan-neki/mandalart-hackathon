@@ -20,15 +20,25 @@ protocol GitHubCommitFetching {
 
 enum GitHubServiceError: LocalizedError {
     case invalidRepository
+    case unauthorized
+    case forbidden
     case requestFailed
 
     var errorDescription: String? {
         switch self {
         case .invalidRepository:
-            return "GitHub の owner / repository が未設定です。"
+            return "GitHub のユーザー名 / リポジトリ名が未設定です。設定から入力してください。"
+        case .unauthorized:
+            return "GitHub のトークンが無効です（401）。設定からトークンを再設定してください。"
+        case .forbidden:
+            return "GitHub へのアクセスが拒否されました（403）。トークンの権限を確認してください。"
         case .requestFailed:
             return "GitHub からコミット履歴を取得できませんでした。"
         }
+    }
+
+    var requiresTokenReset: Bool {
+        self == .unauthorized || self == .forbidden
     }
 }
 
@@ -56,11 +66,19 @@ struct GitHubService: GitHubCommitFetching {
         decoder.dateDecodingStrategy = .iso8601
 
         let (data, response) = try await URLSession.shared.data(for: request)
-        guard let httpResponse = response as? HTTPURLResponse,
-              (200..<300).contains(httpResponse.statusCode) else {
+        guard let httpResponse = response as? HTTPURLResponse else {
             throw GitHubServiceError.requestFailed
         }
 
-        return try decoder.decode([GitHubCommit].self, from: data)
+        switch httpResponse.statusCode {
+        case 200..<300:
+            return try decoder.decode([GitHubCommit].self, from: data)
+        case 401:
+            throw GitHubServiceError.unauthorized
+        case 403:
+            throw GitHubServiceError.forbidden
+        default:
+            throw GitHubServiceError.requestFailed
+        }
     }
 }

@@ -11,7 +11,7 @@ struct SyncJournalView: View {
                     Text("今日の行動ログ")
                         .font(.system(size: 26, weight: .black))
                         .foregroundColor(Color.stone900)
-                    Text("チェックインや同期で取得した行動を時系列で確認できます。")
+                    Text("記録や同期で取得した行動を時系列で確認できます。")
                         .font(.system(size: 13, weight: .medium))
                         .foregroundColor(Color.stone500)
                         .lineSpacing(4)
@@ -29,7 +29,7 @@ struct SyncJournalView: View {
                         Text("まだ記録がありません")
                             .font(.system(size: 14, weight: .medium))
                             .foregroundColor(Color.stone400)
-                        Text("チェックインするか、同期ボタンを押してみてください。")
+                        Text("「今日の記録」から記録するか、同期ボタンを押してみてください。")
                             .font(.system(size: 12))
                             .foregroundColor(Color.stone400)
                     }
@@ -69,7 +69,20 @@ struct SyncJournalView: View {
     }
 
     private var encouragementCard: some View {
-        VStack(spacing: 12) {
+        let count = vm.journalEntries.count
+        let headline: String
+        let body: String
+        if count == 0 {
+            headline = "まず1つ記録してみよう"
+            body = "「今日の記録」から始めると、行動が記録として積み上がっていきます。"
+        } else if count < 5 {
+            headline = "記録が残っている"
+            body = "少しでも動いた分が記録に残る。それだけで十分。"
+        } else {
+            headline = "今日もおつかれさまでした"
+            body = "記録が残ること自体が前進の証拠。明日もその調子で。"
+        }
+        return VStack(spacing: 12) {
             ZStack {
                 Circle()
                     .fill(.white)
@@ -79,10 +92,10 @@ struct SyncJournalView: View {
                     .font(.system(size: 20))
                     .foregroundColor(Color.amber500)
             }
-            Text("今日もおつかれさまでした")
+            Text(headline)
                 .font(.system(size: 17, weight: .black))
                 .foregroundColor(Color(hex: "92400e"))
-            Text("記録が残ること自体が前進の証拠。明日もその調子で。")
+            Text(body)
                 .font(.system(size: 12, weight: .medium))
                 .foregroundColor(Color(hex: "b45309").opacity(0.8))
                 .multilineTextAlignment(.center)

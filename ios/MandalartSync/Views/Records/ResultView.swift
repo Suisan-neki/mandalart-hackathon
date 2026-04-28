@@ -304,7 +304,7 @@ struct ResultView: View {
     private var cognitiveGapSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Label("認知のズレ分析", systemImage: "eye.trianglebadge.exclamationmark")
+                Label("GitHub 連携分析", systemImage: "chevron.left.forwardslash.chevron.right")
                     .font(.system(size: 13, weight: .bold))
                     .foregroundColor(Color.stone800)
                 Spacer()
@@ -321,8 +321,8 @@ struct ResultView: View {
                     iconName: "checkmark.seal.fill",
                     iconBg: Color(hex: "dcfce7"),
                     iconColor: Color(hex: "16a34a"),
-                    title: "今のところズレは見つかっていない",
-                    subtitle: "チェックインを続けると、ここに分析が表示されます。"
+                    title: "GitHub との対応は見つかりません",
+                    subtitle: "GitHub を連携して同期すると、ここに分析が表示されます。"
                 )
             } else {
                 ForEach(vm.topGapInsights) { insight in

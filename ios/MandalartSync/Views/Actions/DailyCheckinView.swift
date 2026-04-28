@@ -60,7 +60,7 @@ struct DailyCheckinView: View {
                         .clipShape(Circle())
                 }
                 Spacer()
-                Label("デイリーチェックイン", systemImage: "scope")
+                Label("今日の記録", systemImage: "scope")
                     .font(.system(size: 15, weight: .bold))
                     .foregroundColor(Color.stone800)
                 Spacer()
@@ -177,7 +177,7 @@ struct DailyCheckinView: View {
                     .foregroundColor(Color.amber500)
             }
             VStack(spacing: 8) {
-                Text("チェックイン完了")
+                Text("記録完了")
                     .font(.system(size: 24, weight: .black))
                     .foregroundColor(Color.stone800)
                 Text("今日の振り返りを記録しました。\n完了 \(vm.todayCompletedCount) 件 / 全 \(vm.totalTaskCount) 件")

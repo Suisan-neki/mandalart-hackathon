@@ -8,6 +8,7 @@ struct HomeView: View {
     @State private var navigateToCheckin = false
     @State private var navigateToJournal = false
     @State private var navigateToResult = false
+    @State private var navigateToSettings = false
     @State private var bannerPulse = false
     @State private var warningShake: CGFloat = 0
 
@@ -16,6 +17,11 @@ struct HomeView: View {
             VStack(spacing: 0) {
                 // Dark header
                 headerSection
+
+                // Offline banner
+                if vm.isOffline {
+                    offlineBanner
+                }
 
                 // Content
                 VStack(spacing: 24) {
@@ -38,13 +44,23 @@ struct HomeView: View {
         .navigationDestination(isPresented: $navigateToResult) {
             ResultView()
         }
+        .navigationDestination(isPresented: $navigateToSettings) {
+            SettingsView()
+        }
         .alert(
             "同期エラー",
             isPresented: Binding(
                 get: { vm.syncErrorMessage != nil },
-                set: { if !$0 { vm.syncErrorMessage = nil } }
+                set: { if !$0 { vm.syncErrorMessage = nil; vm.syncRequiresSettings = false } }
             )
         ) {
+            if vm.syncRequiresSettings {
+                Button("設定を開く") {
+                    vm.syncErrorMessage = nil
+                    vm.syncRequiresSettings = false
+                    navigateToSettings = true
+                }
+            }
             Button("閉じる", role: .cancel) {}
         } message: {
             Text(vm.syncErrorMessage ?? "")
@@ -55,6 +71,22 @@ struct HomeView: View {
         .onChange(of: vm.mostCriticalGap?.id) { _, _ in
             startWarningAnimationIfNeeded()
         }
+    }
+
+    // MARK: - Offline Banner
+    private var offlineBanner: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "wifi.slash")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundColor(.white)
+            Text("オフラインです。同期は接続後に実行されます。")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(.white)
+            Spacer()
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+        .background(Color.orange500)
     }
 
     // MARK: - Header
@@ -217,7 +249,7 @@ struct HomeView: View {
                     .font(.system(size: 20, weight: .black))
                     .foregroundColor(Color.stone900)
 
-                Text("今日の行動を簡単に記録する。所要時間は1分以内。")
+                Text("32項目の目標にどう近づいたかを記録しましょう。小さな一歩も大切な積み上げです。")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(Color.stone500)
                     .lineSpacing(4)
@@ -324,7 +356,7 @@ struct HomeView: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 4) {
-                        Text(vm.mostCriticalGap?.severity == .critical ? "自己認識にズレが出ています" : "目標を見直す時期かも？")
+                        Text(vm.mostCriticalGap?.severity == .critical ? "未記録のアクションがあります" : "目標と行動を照らし合わせてみましょう")
                             .font(.system(size: 13, weight: .bold))
                             .foregroundColor(Color(hex: "312e81"))
                         Image(systemName: "sparkles")

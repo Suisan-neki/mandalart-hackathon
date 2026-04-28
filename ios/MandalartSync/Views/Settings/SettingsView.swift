@@ -62,7 +62,7 @@ struct SettingsView: View {
                                     .font(.system(size: 14))
                                     .foregroundColor(Color.stone500)
                             }
-                            Text("ズレ通知")
+                            Text("同期通知")
                                 .font(.system(size: 14, weight: .bold))
                                 .foregroundColor(Color.stone800)
                         }
@@ -246,7 +246,7 @@ struct SettingsView: View {
                         Text("SwiftData")
                             .font(.system(size: 14, weight: .bold))
                             .foregroundColor(Color.stone800)
-                        Text("マンダラート、チェックイン、同期ログ、認知のズレ分析は端末内に保存されます。")
+                        Text("マンダラート、行動記録、同期ログ、GitHub 連携分析は端末内に保存されます。")
                             .font(.system(size: 12, weight: .medium))
                             .foregroundColor(Color.stone500)
                             .lineSpacing(3)
@@ -280,36 +280,7 @@ struct SettingsView: View {
                     .padding(.vertical, 14)
                 }
 
-                // Legal / Other
-                settingsSection(title: "その他") {
-                    serviceRow(
-                        iconName: "shield.fill",
-                        iconBg: Color.stone100,
-                        iconFg: Color.stone500,
-                        label: "プライバシーポリシー",
-                        trailing: {
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 13))
-                                .foregroundColor(Color.stone300)
-                        },
-                        action: {
-                        }
-                    )
-                    Divider().padding(.horizontal, 16)
-                    serviceRow(
-                        iconName: "rectangle.portrait.and.arrow.right",
-                        iconBg: Color.stone100,
-                        iconFg: Color.stone500,
-                        label: "ログアウト",
-                        trailing: {
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 13))
-                                .foregroundColor(Color.stone300)
-                        },
-                        action: {
-                        }
-                    )
-                }
+
 
                 Text("Mandalart Sync  Version 1.0.0")
                     .font(.system(size: 12))
@@ -416,7 +387,7 @@ struct SettingsView: View {
     private var notificationStatusText: String {
         switch vm.notificationAuthorizationStatus {
         case .authorized, .provisional:
-            return "認知のズレが大きいときにローカル通知でフィードバックします。"
+            return "GitHub のコミットと記録に差があるときに通知します。"
         case .denied:
             return "通知が無効です。必要なら iPhone の設定から再度許可してください。"
         case .notDetermined:
