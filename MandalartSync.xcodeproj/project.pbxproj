@@ -27,6 +27,8 @@
 		D31048247E96D2109679629B /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00D410DB148BE227CFAD061E /* SettingsView.swift */; };
 		EBEB2BADC3FA6880CA8976EB /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96BAADEC5A83FA06590F0BD7 /* KeychainStore.swift */; };
 		F9551369D0D1D38E7D62C7F6 /* SyncJournalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9EAD018D0A114976DE89D91 /* SyncJournalView.swift */; };
+		AA11BB22CC33DD44EE55FF66 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11BB22CC33DD44EE55FF77 /* NetworkMonitor.swift */; };
+		BB22CC33DD44EE55FF66AA11 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB22CC33DD44EE55FF66AA22 /* OnboardingView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -52,6 +54,8 @@
 		D9EAD018D0A114976DE89D91 /* SyncJournalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncJournalView.swift; sourceTree = "<group>"; };
 		DE0A2FB6F6642C3EF6BE3760 /* Color+Hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Hex.swift"; sourceTree = "<group>"; };
 		F5CD8462CD5B0B6723110418 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		AA11BB22CC33DD44EE55FF77 /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
+		BB22CC33DD44EE55FF66AA22 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -100,6 +104,7 @@
 			children = (
 				74D6FA8C2A7FDF43EF43F2DB /* MainTabView.swift */,
 				5CA8D0CB5C7881C66A96E4CC /* SplashView.swift */,
+				BB22CC33DD44EE55FF66AA22 /* OnboardingView.swift */,
 				D9F892E7C1F74536B5267F27 /* Actions */,
 				C2A5A409BAFF14A7A4E9821A /* Goals */,
 				C7C33535ECB106E5223E8571 /* Records */,
@@ -114,6 +119,7 @@
 				C0317E61C95689B349C38C11 /* GitHubService.swift */,
 				A6F174386495D992A1214EA7 /* GoogleCalendarService.swift */,
 				96BAADEC5A83FA06590F0BD7 /* KeychainStore.swift */,
+				AA11BB22CC33DD44EE55FF77 /* NetworkMonitor.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -269,6 +275,8 @@
 				D31048247E96D2109679629B /* SettingsView.swift in Sources */,
 				1AC74AC97AD467625104A12D /* SplashView.swift in Sources */,
 				F9551369D0D1D38E7D62C7F6 /* SyncJournalView.swift in Sources */,
+				AA11BB22CC33DD44EE55FF66 /* NetworkMonitor.swift in Sources */,
+				BB22CC33DD44EE55FF66AA11 /* OnboardingView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

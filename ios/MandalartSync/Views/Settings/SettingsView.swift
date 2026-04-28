@@ -197,6 +197,28 @@ struct SettingsView: View {
                         }
                         .padding(.horizontal, 16)
                         .padding(.vertical, 14)
+
+                        Divider().padding(.horizontal, 16)
+
+                        Button(action: { vm.resetDemoPreset() }) {
+                            HStack(spacing: 12) {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color.stone100)
+                                        .frame(width: 32, height: 32)
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(Color.stone500)
+                                }
+                                Text("デモを解除して初期状態に戻す")
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundColor(Color.stone700)
+                                Spacer()
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 14)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
 

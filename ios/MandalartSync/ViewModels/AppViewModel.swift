@@ -82,6 +82,9 @@ final class AppViewModel: ObservableObject {
     }
     @Published var activeDemoPreset: DemoScenarioPreset?
 
+    /// 目標未設定＝初回起動（オンボーディング表示判定に使用）
+    var isFirstLaunch: Bool { mainGoal.isEmpty }
+
     static func makeModelContainer(isStoredInMemoryOnly: Bool = false) -> ModelContainer {
         do {
             let configuration = ModelConfiguration(isStoredInMemoryOnly: isStoredInMemoryOnly)
@@ -411,6 +414,11 @@ final class AppViewModel: ObservableObject {
             notificationsEnabled = true
             analyzeCognitiveGaps(referenceDate: Self.demoReferenceDate)
         }
+    }
+
+    func resetDemoPreset() {
+        activeDemoPreset = nil
+        resetAllData()
     }
 
     func resetAllData() {

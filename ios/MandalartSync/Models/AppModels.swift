@@ -181,9 +181,9 @@ struct PersistedAppState: Codable {
     var notificationsEnabled: Bool
 
     static let `default` = PersistedAppState(
-        mainGoal: "最強のエンジニアになる",
-        categories: MandalartCategory.sampleData,
-        journalEntries: JournalEntry.sampleEntries,
+        mainGoal: "",
+        categories: [],
+        journalEntries: [],
         gapInsights: [],
         githubSettings: .default,
         googleCalendarSettings: .default,
