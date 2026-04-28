@@ -1,10 +1,10 @@
 import SwiftUI
 
 struct MainTabView: View {
-    @State private var selectedTab = 0
+    @EnvironmentObject private var vm: AppViewModel
 
     var body: some View {
-        TabView(selection: $selectedTab) {
+        TabView(selection: $vm.selectedTab) {
             // Tab 1: 目標
             NavigationStack {
                 BlockMandalartView()

@@ -196,9 +196,17 @@ struct SettingsView: View {
                     activeDemoPresentation = nil
                 }
             case .inputTutorial:
-                MandalartInputTutorialView {
-                    activeDemoPresentation = nil
-                }
+                // 目標タブに移動してスポットライトを起動
+                Color.clear
+                    .onAppear {
+                        activeDemoPresentation = nil
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            vm.selectedTab = 0
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                vm.showMandalartTutorial = true
+                            }
+                        }
+                    }
             case .errorScreen:
                 DemoErrorView {
                     activeDemoPresentation = nil

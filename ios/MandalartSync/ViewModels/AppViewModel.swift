@@ -84,6 +84,10 @@ final class AppViewModel: ObservableObject {
     @Published var activeDemoPreset: DemoScenarioPreset? {
         didSet { persistActiveDemoPreset() }
     }
+    /// タブ選択（0=目標, 1=アクション, 2=設定）
+    @Published var selectedTab = 0
+    /// マンダラート画面上のスポットライトチュートリアルを起動するトリガー（SettingsView→BlockMandalartView）
+    @Published var showMandalartTutorial = false
     /// 目標未設定＝初回起動（オンボーディング表示判定に使用）
     var isFirstLaunch: Bool { mainGoal.isEmpty }
 
