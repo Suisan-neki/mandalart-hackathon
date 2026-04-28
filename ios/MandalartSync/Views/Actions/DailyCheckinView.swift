@@ -58,7 +58,7 @@ struct DailyCheckinView: View {
                         .clipShape(Circle())
                 }
                 Spacer()
-                Label("今日の記録", systemImage: "scope")
+                Label("最近の記録", systemImage: "scope")
                     .font(.system(size: 15, weight: .bold))
                     .foregroundColor(Color.stone800)
                 Spacer()
@@ -174,7 +174,7 @@ struct DailyCheckinView: View {
                 Text("記録完了")
                     .font(.system(size: 24, weight: .black))
                     .foregroundColor(Color.stone800)
-                Text("今日の振り返りを記録しました。\n完了 \(vm.todayCompletedCount) 件 / 全 \(vm.totalTaskCount) 件")
+                Text("最近の8項目の振り返りを記録しました。\n完了 \(vm.todayCompletedCount) 件 / 最近の対象 \(vm.totalTaskCount) 件")
                     .font(.system(size: 13))
                     .foregroundColor(Color.stone500)
                     .multilineTextAlignment(.center)
@@ -182,7 +182,7 @@ struct DailyCheckinView: View {
             }
             Spacer()
             Button(action: { navigateToResult = true }) {
-                Label("今日の結果を見る", systemImage: "chart.bar.fill")
+                Label("最近の結果を見る", systemImage: "chart.bar.fill")
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
@@ -249,7 +249,7 @@ struct SwipeableCard: View {
                     .foregroundColor(Color.stone900)
                     .lineSpacing(4)
 
-                Text("今日、この目標に向かって実際に行動しましたか？")
+                Text("最近、この目標に向かって実際に行動しましたか？")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(Color.stone500)
                     .padding(.top, 12)

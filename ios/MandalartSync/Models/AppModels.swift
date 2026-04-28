@@ -203,7 +203,7 @@ struct PersistedAppState: Codable {
                         id: baseId + blockIndex,
                         title: "",
                         progress: 0,
-                        resonance: 50,
+                        resonance: 0,
                         cleared: false
                     )
                 }
@@ -267,6 +267,7 @@ struct CloudSyncEnvelope: Codable {
 enum DemoScenarioPreset: String, CaseIterable, Identifiable {
     case cognitiveGap
     case alignedMomentum
+    case offlineMode
     case apiError
 
     var id: String { rawValue }
@@ -277,6 +278,8 @@ enum DemoScenarioPreset: String, CaseIterable, Identifiable {
             return "未達成・記録不足あり"
         case .alignedMomentum:
             return "順調シナリオ"
+        case .offlineMode:
+            return "オフライン運用"
         case .apiError:
             return "APIエラーシナリオ"
         }
@@ -288,6 +291,8 @@ enum DemoScenarioPreset: String, CaseIterable, Identifiable {
             return "記録不足や未達成のアクションがある状態"
         case .alignedMomentum:
             return "記録と外部ログが一致している状態"
+        case .offlineMode:
+            return "ネットなしでもローカル保存で使える状態"
         case .apiError:
             return "同期失敗時の動作を確認する"
         }

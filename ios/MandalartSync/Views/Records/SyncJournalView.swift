@@ -8,7 +8,7 @@ struct SyncJournalView: View {
             VStack(alignment: .leading, spacing: 0) {
                 // Hero
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("今日の行動ログ")
+                    Text("最近の行動ログ")
                         .font(.system(size: 26, weight: .black))
                         .foregroundColor(Color.stone900)
                     Text("記録や同期で取得した行動を時系列で確認できます。")
@@ -29,7 +29,7 @@ struct SyncJournalView: View {
                         Text("まだ記録がありません")
                             .font(.system(size: 14, weight: .medium))
                             .foregroundColor(Color.stone400)
-                        Text("「今日の記録」から記録するか、同期ボタンを押してみてください。")
+                        Text("「最近の記録」から記録するか、同期ボタンを押してみてください。")
                             .font(.system(size: 12))
                             .foregroundColor(Color.stone400)
                     }
@@ -74,12 +74,12 @@ struct SyncJournalView: View {
         let body: String
         if count == 0 {
             headline = "まず1つ記録してみよう"
-            body = "「今日の記録」から始めると、行動が記録として積み上がっていきます。"
+            body = "「最近の記録」から始めると、行動が記録として積み上がっていきます。"
         } else if count < 5 {
             headline = "記録が残っている"
             body = "少しでも動いた分が記録に残る。それだけで十分。"
         } else {
-            headline = "今日もおつかれさまでした"
+            headline = "最近もおつかれさまでした"
             body = "記録が残ること自体が前進の証拠。明日もその調子で。"
         }
         return VStack(spacing: 12) {

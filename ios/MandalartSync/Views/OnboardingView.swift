@@ -168,7 +168,7 @@ struct OnboardingView: View {
                 : categoryTitles[i]
             let baseId = (i + 1) * 100
             let blocks: [MandalartBlock] = (1...8).map { j in
-                MandalartBlock(id: baseId + j, title: "", progress: 0, resonance: 50, cleared: false)
+                MandalartBlock(id: baseId + j, title: "", progress: 0, resonance: 0, cleared: false)
             }
             return MandalartCategory(id: i + 1, title: title, color: colors[i], blocks: blocks)
         }

@@ -3,11 +3,20 @@ import SwiftUI
 struct SettingsView: View {
     @EnvironmentObject private var vm: AppViewModel
     @State private var activeSheet: SettingsSheet?
+    @State private var activeDemoPresentation: DemoPresentation?
     @State private var showResetAlert = false
 
     private enum SettingsSheet: String, Identifiable {
         case github
         case googleCalendar
+
+        var id: String { rawValue }
+    }
+
+    private enum DemoPresentation: String, Identifiable {
+        case launchTutorial
+        case inputTutorial
+        case errorScreen
 
         var id: String { rawValue }
     }
@@ -119,118 +128,42 @@ struct SettingsView: View {
 
                 settingsSection(title: "デモ運用") {
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("発表前にワンタップで状態を切り替えられます。")
+                        Text("発表で見せる導線だけをここから開けます。APIエラーやオフラインのシナリオには入りません。")
                             .font(.system(size: 12, weight: .medium))
                             .foregroundColor(Color.stone500)
                             .padding(.horizontal, 16)
                             .padding(.top, 14)
 
-                        ForEach(DemoScenarioPreset.allCases) { preset in
-                            Button(action: {
-                                if vm.activeDemoPreset == preset {
-                                    vm.resetDemoPreset()
-                                } else {
-                                    vm.applyDemoPreset(preset)
-                                }
-                            }) {
-                                HStack(alignment: .top, spacing: 12) {
-                                    ZStack {
-                                        Circle()
-                                            .fill(vm.activeDemoPreset == preset ? Color.indigo600 : Color.stone100)
-                                            .frame(width: 32, height: 32)
-                                        Image(systemName: iconName(for: preset))
-                                            .font(.system(size: 14))
-                                            .foregroundColor(vm.activeDemoPreset == preset ? .white : Color.stone500)
-                                    }
-
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        HStack(spacing: 6) {
-                                            Text(preset.title)
-                                                .font(.system(size: 14, weight: .bold))
-                                                .foregroundColor(Color.stone800)
-                                            if vm.activeDemoPreset == preset {
-                                                Text("適用中")
-                                                    .font(.system(size: 9, weight: .bold))
-                                                    .foregroundColor(Color.indigo600)
-                                                    .padding(.horizontal, 8)
-                                                    .padding(.vertical, 4)
-                                                    .background(Color.indigo100)
-                                                    .clipShape(Capsule())
-                                            }
-                                        }
-                                        Text(preset.subtitle)
-                                            .font(.system(size: 11, weight: .medium))
-                                            .foregroundColor(Color.stone500)
-                                            .lineSpacing(3)
-                                    }
-
-                                    Spacer()
-                                }
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 12)
-                            }
-                            .buttonStyle(.plain)
-
-                            if preset != DemoScenarioPreset.allCases.last {
-                                Divider().padding(.horizontal, 16)
-                            }
+                        demoActionRow(
+                            iconName: "figure.baseball",
+                            title: "既存のチュートリアル",
+                            subtitle: "大谷翔平のくだりから始まる導入を見る"
+                        ) {
+                            activeDemoPresentation = .launchTutorial
                         }
-                    }
 
-                    if let activePreset = vm.activeDemoPreset {
                         Divider().padding(.horizontal, 16)
 
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text("デモ台本: \(activePreset.title)")
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundColor(Color.stone800)
-
-                            ForEach(vm.demoScenarioSteps) { step in
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(step.title)
-                                        .font(.system(size: 12, weight: .bold))
-                                        .foregroundColor(Color.stone700)
-                                    Text(step.detail)
-                                        .font(.system(size: 11, weight: .medium))
-                                        .foregroundColor(Color.stone500)
-                                        .lineSpacing(3)
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(12)
-                                .background(Color.stone50)
-                                .clipShape(RoundedRectangle(cornerRadius: 16))
-                            }
+                        demoActionRow(
+                            iconName: "square.grid.3x3.fill",
+                            title: "マンダラートの入力方法",
+                            subtitle: "大目標、中目標、小目標を入れる流れを見る"
+                        ) {
+                            activeDemoPresentation = .inputTutorial
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 14)
-                    }
 
-                    Divider().padding(.horizontal, 16)
+                        Divider().padding(.horizontal, 16)
 
-                    Button(action: { vm.resetDemoPreset() }) {
-                        HStack(spacing: 12) {
-                            ZStack {
-                                Circle()
-                                    .fill(Color.stone100)
-                                    .frame(width: 32, height: 32)
-                                Image(systemName: "xmark.circle.fill")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(Color.stone500)
-                            }
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text("デモを解除して初期状態に戻す")
-                                    .font(.system(size: 14, weight: .bold))
-                                    .foregroundColor(Color.stone700)
-                                Text("デモ表示が残っている場合もここから通常の空状態へ戻せます。")
-                                    .font(.system(size: 11, weight: .medium))
-                                    .foregroundColor(Color.stone500)
-                            }
-                            Spacer()
+                        demoActionRow(
+                            iconName: "exclamationmark.triangle.fill",
+                            title: "エラー画面",
+                            subtitle: "同期に失敗したときの見え方だけ確認する",
+                            tint: Color.red500,
+                            background: Color.red500.opacity(0.08)
+                        ) {
+                            activeDemoPresentation = .errorScreen
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 14)
                     }
-                    .buttonStyle(.plain)
                 }
 
                 Text("Mandalart Sync  Version 1.0.0")
@@ -254,6 +187,22 @@ struct SettingsView: View {
             case .googleCalendar:
                 GoogleCalendarSettingsView()
                     .environmentObject(vm)
+            }
+        }
+        .fullScreenCover(item: $activeDemoPresentation) { presentation in
+            switch presentation {
+            case .launchTutorial:
+                LaunchTutorialView {
+                    activeDemoPresentation = nil
+                }
+            case .inputTutorial:
+                MandalartInputTutorialView {
+                    activeDemoPresentation = nil
+                }
+            case .errorScreen:
+                DemoErrorView {
+                    activeDemoPresentation = nil
+                }
             }
         }
         .alert("すべてのデータをリセットしますか？", isPresented: $showResetAlert) {
@@ -335,6 +284,48 @@ struct SettingsView: View {
         }
     }
 
+    private func demoActionRow(
+        iconName: String,
+        title: String,
+        subtitle: String,
+        tint: Color = Color.indigo600,
+        background: Color = Color.indigo100,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(alignment: .top, spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(background)
+                        .frame(width: 34, height: 34)
+                    Image(systemName: iconName)
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(tint)
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(Color.stone800)
+                    Text(subtitle)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(Color.stone500)
+                        .lineSpacing(3)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(Color.stone300)
+                    .padding(.top, 9)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+        }
+        .buttonStyle(.plain)
+    }
+
     private var notificationStatusText: String {
         switch vm.notificationAuthorizationStatus {
         case .authorized, .provisional:
@@ -350,14 +341,72 @@ struct SettingsView: View {
         }
     }
 
-    private func iconName(for preset: DemoScenarioPreset) -> String {
-        switch preset {
-        case .cognitiveGap:
-            return "eye.trianglebadge.exclamationmark.fill"
-        case .alignedMomentum:
-            return "checkmark.seal.fill"
-        case .apiError:
-            return "wifi.exclamationmark"
+}
+
+private struct DemoErrorView: View {
+    let onDismiss: () -> Void
+
+    var body: some View {
+        ZStack {
+            Color.stone50.ignoresSafeArea()
+
+            VStack(spacing: 24) {
+                Spacer()
+
+                ZStack {
+                    Circle()
+                        .fill(Color.red500.opacity(0.1))
+                        .frame(width: 108, height: 108)
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 44, weight: .black))
+                        .foregroundColor(Color.red500)
+                }
+
+                VStack(spacing: 10) {
+                    Text("同期に失敗しました")
+                        .font(.system(size: 26, weight: .black))
+                        .foregroundColor(Color.stone900)
+                    Text("GitHub または Google Calendar の認証情報を確認してください。入力した目標や記録は端末に保存されています。")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(Color.stone500)
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(5)
+                }
+                .padding(.horizontal, 30)
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Label("API Error 401", systemImage: "lock.slash.fill")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(Color.red600)
+                    Text("アクセストークンが無効、または期限切れです。設定から再ログインすると同期を再開できます。")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(Color.stone600)
+                        .lineSpacing(4)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(18)
+                .background(.white)
+                .clipShape(RoundedRectangle(cornerRadius: 22))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 22)
+                        .stroke(Color.red500.opacity(0.16), lineWidth: 1)
+                )
+                .padding(.horizontal, 24)
+
+                Spacer()
+
+                Button(action: onDismiss) {
+                    Text("閉じる")
+                        .font(.system(size: 17, weight: .black))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(Color.stone900)
+                        .clipShape(RoundedRectangle(cornerRadius: 18))
+                }
+                .padding(.horizontal, 28)
+                .padding(.bottom, 30)
+            }
         }
     }
 }

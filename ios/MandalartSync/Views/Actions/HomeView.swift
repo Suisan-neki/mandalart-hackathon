@@ -4,10 +4,7 @@ struct HomeView: View {
     @EnvironmentObject var vm: AppViewModel
     @State private var progressWidth: CGFloat = 0
     @State private var navigateToCheckin = false
-    @State private var navigateToJournal = false
-    @State private var navigateToResult = false
     @State private var navigateToSettings = false
-    @State private var bannerPulse = false
 
     var body: some View {
         ScrollView {
@@ -23,23 +20,16 @@ struct HomeView: View {
                 // Content
                 VStack(spacing: 24) {
                     todaySection
-                    quickActionsSection
-                    goalReviewBanner
                 }
                 .padding(.horizontal, 24)
-                .padding(.vertical, 28)
+                .padding(.top, 26)
+                .padding(.bottom, 28)
             }
         }
         .background(Color.stone50.ignoresSafeArea())
         .navigationBarHidden(true)
         .navigationDestination(isPresented: $navigateToCheckin) {
             DailyCheckinView()
-        }
-        .navigationDestination(isPresented: $navigateToJournal) {
-            SyncJournalView()
-        }
-        .navigationDestination(isPresented: $navigateToResult) {
-            ResultView()
         }
         .navigationDestination(isPresented: $navigateToSettings) {
             SettingsView()
@@ -61,12 +51,6 @@ struct HomeView: View {
             Button("閉じる", role: .cancel) {}
         } message: {
             Text(vm.syncErrorMessage ?? "")
-        }
-        .onAppear {
-            startWarningAnimationIfNeeded()
-        }
-        .onChange(of: vm.mostCriticalGap?.id) { _, _ in
-            startWarningAnimationIfNeeded()
         }
     }
 
@@ -140,16 +124,9 @@ struct HomeView: View {
             }
             .padding(.top, 60)
             .padding(.horizontal, 24)
-            .padding(.bottom, 28)
+            .padding(.bottom, 34)
         }
-        .clipShape(RoundedRectangle(cornerRadius: 0))
-        // Bottom rounded corners
-        .overlay(alignment: .bottom) {
-            RoundedCorner(radius: 40, corners: [.bottomLeft, .bottomRight])
-                .fill(Color.zinc950)
-                .frame(height: 40)
-                .offset(y: 20)
-        }
+        .clipShape(RoundedCorner(radius: 32, corners: [.bottomLeft, .bottomRight]))
     }
 
     private var progressCard: some View {
@@ -163,11 +140,11 @@ struct HomeView: View {
 
                 VStack(alignment: .leading, spacing: 10) {
                     HStack {
-                        Label("全体の進捗", systemImage: "waveform.path.ecg")
+                        Label("獲得した星", systemImage: "star.fill")
                             .font(.system(size: 13, weight: .bold))
                             .foregroundColor(Color.zinc300)
                         Spacer()
-                        Text("\(Int(vm.weeklyProgress))%")
+                        Text("\(vm.earnedStarCount) / \(vm.maxStarCount)")
                             .font(.system(size: 26, weight: .black, design: .monospaced))
                             .foregroundColor(.white)
                     }
@@ -203,7 +180,7 @@ struct HomeView: View {
     // MARK: - Today Section
     private var todaySection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Label("今日の記録", systemImage: "checkmark.circle.fill")
+            Label("最近の記録", systemImage: "checkmark.circle.fill")
                 .font(.system(size: 17, weight: .black))
                 .foregroundColor(Color.stone900)
 
@@ -242,7 +219,7 @@ struct HomeView: View {
                         .tracking(1)
                 }
 
-                Text("今日できたことを記録する")
+                Text("最近できたことを記録する")
                     .font(.system(size: 20, weight: .black))
                     .foregroundColor(Color.stone900)
 
@@ -279,133 +256,6 @@ struct HomeView: View {
         .shadow(color: .black.opacity(0.04), radius: 10, y: 4)
     }
 
-    // MARK: - Quick Actions
-    private var quickActionsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("便利な機能")
-                .font(.system(size: 11, weight: .bold))
-                .foregroundColor(Color.stone400)
-                .tracking(2)
-
-            HStack(spacing: 14) {
-                quickActionTile(
-                    icon: "list.bullet.rectangle",
-                    title: "できたことの記録",
-                    subtitle: "過去の行動ログ（タイムライン）を見る"
-                ) {
-                    navigateToJournal = true
-                }
-                quickActionTile(
-                    icon: "square.grid.3x3.fill",
-                    title: "マンダラートを見る",
-                    subtitle: "アクションの進捗や内容を確認・編集する"
-                ) {
-                    // 目標タブに切り替えるのはタブバーから操作するため、ここは空実装のまま
-                }
-            }
-        }
-    }
-
-    private func quickActionTile(icon: String, title: String, subtitle: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            VStack(alignment: .leading, spacing: 12) {
-                Image(systemName: icon)
-                    .font(.system(size: 20))
-                    .foregroundColor(Color.stone600)
-                    .padding(10)
-                    .background(Color.stone100)
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
-                Spacer()
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(Color.stone800)
-                    Text(subtitle)
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundColor(Color.stone500)
-                        .lineLimit(2)
-                        .lineSpacing(2)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(18)
-            .background(.white)
-            .clipShape(RoundedRectangle(cornerRadius: 24))
-            .overlay(
-                RoundedRectangle(cornerRadius: 24).stroke(Color.stone200, lineWidth: 0.5)
-            )
-            .shadow(color: .black.opacity(0.03), radius: 8, y: 2)
-        }
-        .buttonStyle(.plain)
-        .aspectRatio(1, contentMode: .fit)
-    }
-
-    // MARK: - Goal Review Banner
-    private var goalReviewBanner: some View {
-        Button(action: { navigateToResult = true }) {
-            HStack(spacing: 14) {
-                Image(systemName: "bell.badge.fill")
-                    .font(.system(size: 18))
-                    .foregroundColor(Color.indigo600)
-                    .padding(8)
-                    .background(Color.indigo600.opacity(0.15))
-                    .clipShape(Circle())
-
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 4) {
-                        Text("目標と行動を照らし合わせてみましょう")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundColor(Color(hex: "312e81"))
-                        Image(systemName: "sparkles")
-                            .font(.system(size: 10))
-                            .foregroundColor(Color.indigo400)
-                    }
-                    Text(vm.mostCriticalGap?.summary ?? "1ヶ月が経過しました。現在の目標は今のあなたにフィットしていますか？")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(Color(hex: "4338ca").opacity(0.8))
-                        .lineSpacing(2)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(18)
-            .background(bannerBackground)
-            .clipShape(RoundedRectangle(cornerRadius: 24))
-            .overlay(
-                RoundedRectangle(cornerRadius: 24).stroke(bannerStroke, lineWidth: 1)
-            )
-        }
-        .buttonStyle(.plain)
-        .shadow(color: bannerShadow, radius: 8, y: 4)
-    }
-
-    private var bannerBackground: LinearGradient {
-        if vm.mostCriticalGap?.severity == .critical {
-            return LinearGradient(
-                colors: [Color(hex: "f5d0fe"), Color(hex: "fee2e2")],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        }
-        return LinearGradient(
-            colors: [Color.indigo100, Color(hex: "e9d5ff")],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-    }
-
-    private var bannerStroke: Color {
-        vm.mostCriticalGap?.severity == .critical ? Color.red500.opacity(0.35) : Color.indigo100
-    }
-
-    private var bannerShadow: Color {
-        vm.mostCriticalGap?.severity == .critical
-            ? Color.red500.opacity(0.12)
-            : Color.indigo400.opacity(0.12)
-    }
-
-    private func startWarningAnimationIfNeeded() {
-        bannerPulse = true
-    }
 }
 
 // MARK: - Rounded Corner Helper

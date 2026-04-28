@@ -140,8 +140,10 @@ final class AppViewModel: ObservableObject {
         self.lastCloudSyncAt = storedSettings?.lastCloudSyncAt
         self.cloudSyncStatusMessage = storedSettings?.cloudSyncStatusMessage ?? "未同期"
         self.activeDemoPreset = Self.loadActiveDemoPreset()
+        self.isOffline = activeDemoPreset == .offlineMode
         persistState()
         networkMonitor.onStatusChange = { [weak self] offline in
+            guard self?.activeDemoPreset != .offlineMode else { return }
             self?.isOffline = offline
         }
         networkMonitor.start()
@@ -150,8 +152,17 @@ final class AppViewModel: ObservableObject {
     var weeklyProgress: Double {
         let blocks = categories.flatMap(\.blocks)
         guard !blocks.isEmpty else { return 0 }
-        let total = blocks.reduce(0) { $0 + $1.progress }
-        return total / Double(blocks.count)
+        return Double(earnedStarCount) / Double(maxStarCount) * 100
+    }
+
+    var earnedStarCount: Int {
+        categories
+            .flatMap(\.blocks)
+            .reduce(0) { $0 + starLevel(for: $1.id) }
+    }
+
+    var maxStarCount: Int {
+        max(categories.flatMap(\.blocks).count * 3, 1)
     }
 
     var allDailyTasks: [DailyTask] {
@@ -174,8 +185,12 @@ final class AppViewModel: ObservableObject {
         Set(todayCheckinEntries.compactMap(\.relatedBlockId))
     }
 
+    var todaysDailyTasks: [DailyTask] {
+        dailyTasks(for: Date())
+    }
+
     var pendingDailyTasks: [DailyTask] {
-        allDailyTasks.filter { !todayAnsweredBlockIDs.contains($0.blockId) }
+        todaysDailyTasks.filter { !todayAnsweredBlockIDs.contains($0.blockId) }
     }
 
     var todayCheckinEntries: [JournalEntry] {
@@ -192,7 +207,7 @@ final class AppViewModel: ObservableObject {
     }
 
     var totalTaskCount: Int {
-        allDailyTasks.count
+        todaysDailyTasks.count
     }
 
     var todayCompletionRate: Int {
@@ -239,6 +254,12 @@ final class AppViewModel: ObservableObject {
                 DemoScenarioStep(id: "aligned-2", title: "2. 「行動ログ」でタイムラインを見る", detail: "GitHubコミット、カレンダー予定、手動記録が並んでいるタイムラインを確認する。"),
                 DemoScenarioStep(id: "aligned-3", title: "3. 「アクション」タブで分析を確認する", detail: "GitHub連携分析でコミット数が目標に届いている状態を見せる。")
             ]
+        case .offlineMode:
+            return [
+                DemoScenarioStep(id: "offline-1", title: "1. ホームを開く", detail: "上部にオフラインバナーが表示され、ローカル保存で使えることを確認する。"),
+                DemoScenarioStep(id: "offline-2", title: "2. 「今日の記録」を開く", detail: "通信なしでも振り返りを記録できることを見せる。"),
+                DemoScenarioStep(id: "offline-3", title: "3. 同期ボタンを押す", detail: "エラーではなく『オフライン: ローカル保存で利用中』になることを確認する。")
+            ]
         case .apiError:
             return [
                 DemoScenarioStep(id: "error-1", title: "1. 同期ボタンを押す", detail: "ホーム右上の同期ボタンを押す。エラーアラートが表示される。"),
@@ -274,23 +295,8 @@ final class AppViewModel: ObservableObject {
         categories[categoryIndex].blocks[blockIndex].title = title
     }
 
-    func clearBlock(categoryId: Int, blockId: Int) {
-        guard let categoryIndex = categories.firstIndex(where: { $0.id == categoryId }) else { return }
-        guard let blockIndex = categories[categoryIndex].blocks.firstIndex(where: { $0.id == blockId }) else { return }
-
-        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
-            categories[categoryIndex].blocks[blockIndex].cleared = true
-            categories[categoryIndex].blocks[blockIndex].progress = 100
-            categories[categoryIndex].blocks[blockIndex].resonance = 100
-        }
-    }
-
     func recordCheckin(task: DailyTask, answer: CheckinAnswer) {
         removeTodayEntry(for: task.blockId)
-
-        if answer == .completed {
-            applyCompletionProgress(categoryId: task.categoryId, blockId: task.blockId)
-        }
 
         let entry = JournalEntry(
             id: "manual-\(task.blockId)-\(Int(Date().timeIntervalSince1970))",
@@ -306,6 +312,9 @@ final class AppViewModel: ObservableObject {
         )
 
         journalEntries.insert(entry, at: 0)
+        if answer == .completed {
+            updateBlockStars(categoryId: task.categoryId, blockId: task.blockId)
+        }
         analyzeCognitiveGaps()
     }
 
@@ -385,32 +394,50 @@ final class AppViewModel: ObservableObject {
 
         switch preset {
         case .cognitiveGap:
-            mainGoal = "技育CAMPで優勝する"
+            mainGoal = Self.demoMainGoal
             categories = Self.makeDemoCategories()
             journalEntries = Self.makeCognitiveGapJournalEntries(mainGoal: mainGoal)
             gapInsights = []
             syncErrorMessage = nil
+            syncRequiresSettings = false
+            isOffline = false
             lastCloudSyncAt = Date()
             cloudSyncStatusMessage = "ギャップシナリオを適用中"
             notificationsEnabled = true
             analyzeCognitiveGaps(referenceDate: Self.demoReferenceDate)
 
         case .alignedMomentum:
-            mainGoal = "技育CAMPで優勝する"
+            mainGoal = Self.demoMainGoal
             categories = Self.makeDemoCategories(aligned: true)
             journalEntries = Self.makeAlignedJournalEntries(mainGoal: mainGoal)
             gapInsights = []
             syncErrorMessage = nil
+            syncRequiresSettings = false
+            isOffline = false
             lastCloudSyncAt = Date()
             cloudSyncStatusMessage = "同期済みシナリオを適用中"
             notificationsEnabled = true
             analyzeCognitiveGaps(referenceDate: Self.demoReferenceDate)
 
+        case .offlineMode:
+            mainGoal = Self.demoMainGoal
+            categories = Self.makeDemoCategories()
+            journalEntries = Self.makeOfflineJournalEntries(mainGoal: mainGoal)
+            gapInsights = []
+            syncErrorMessage = nil
+            syncRequiresSettings = false
+            isOffline = true
+            lastCloudSyncAt = nil
+            cloudSyncStatusMessage = "オフライン: ローカル保存で利用中"
+            notificationsEnabled = true
+            analyzeCognitiveGaps(referenceDate: Self.demoReferenceDate)
+
         case .apiError:
-            mainGoal = "技育CAMPで優勝する"
+            mainGoal = Self.demoMainGoal
             categories = Self.makeDemoCategories()
             journalEntries = Self.makeCognitiveGapJournalEntries(mainGoal: mainGoal)
             gapInsights = []
+            isOffline = false
             syncErrorMessage = "GitHub のトークンが無効です（401）。設定からトークンを再設定してください。"
             syncRequiresSettings = true
             lastCloudSyncAt = nil
@@ -442,6 +469,7 @@ final class AppViewModel: ObservableObject {
         syncErrorMessage = nil
         syncRequiresSettings = false
         isSyncing = false
+        isOffline = false
     }
 
     func triggerSync() {
@@ -467,14 +495,79 @@ final class AppViewModel: ObservableObject {
         }
     }
 
-    private func applyCompletionProgress(categoryId: Int, blockId: Int) {
+    private func updateBlockStars(categoryId: Int, blockId: Int) {
         guard let categoryIndex = categories.firstIndex(where: { $0.id == categoryId }) else { return }
         guard let blockIndex = categories[categoryIndex].blocks.firstIndex(where: { $0.id == blockId }) else { return }
 
-        let current = categories[categoryIndex].blocks[blockIndex]
-        categories[categoryIndex].blocks[blockIndex].progress = min(100, current.progress + 12.5)
-        categories[categoryIndex].blocks[blockIndex].resonance = min(100, current.resonance + 8)
-        categories[categoryIndex].blocks[blockIndex].cleared = categories[categoryIndex].blocks[blockIndex].progress >= 100
+        let stars = starLevel(for: blockId)
+        categories[categoryIndex].blocks[blockIndex].progress = Double(stars) / 3.0 * 100
+        categories[categoryIndex].blocks[blockIndex].cleared = stars >= 3
+    }
+
+    private func applyGitHubCommitAchievements(commits: [GitHubCommit], referenceDate: Date) {
+        let calendar = Calendar.current
+        let todayCommits = commits.filter { calendar.isDate($0.date, inSameDayAs: referenceDate) }
+        let todayCount = todayCommits.count
+        let dateKey = Self.dayKey(for: referenceDate)
+
+        for task in allDailyTasks {
+            guard let target = githubCommitTarget(for: task) else { continue }
+
+            let achievementId = "github-auto-\(task.blockId)-\(dateKey)"
+            journalEntries.removeAll { $0.id == achievementId }
+
+            guard todayCount >= target else { continue }
+
+            journalEntries.insert(
+                JournalEntry(
+                    id: achievementId,
+                    date: referenceDate,
+                    kind: .manualCompleted,
+                    source: "GitHub",
+                    systemImageName: "chevron.left.forwardslash.chevron.right",
+                    iconHex: "18181b",
+                    action: "GitHubコミット目標を達成しました",
+                    detail: "今日のコミット数: \(todayCount) / \(target)",
+                    targetGoal: task.targetGoal,
+                    relatedBlockId: task.blockId
+                ),
+                at: 0
+            )
+            updateBlockStars(categoryId: task.categoryId, blockId: task.blockId)
+        }
+    }
+
+    func completionCount(for blockId: Int) -> Int {
+        journalEntries.filter { entry in
+            entry.relatedBlockId == blockId && entry.kind == .manualCompleted
+        }.count
+    }
+
+    func starLevel(for blockId: Int) -> Int {
+        let count = completionCount(for: blockId)
+        if count >= 10 { return 3 }
+        if count >= 5 { return 2 }
+        if count >= 2 { return 1 }
+        return 0
+    }
+
+    private func dailyTasks(for date: Date) -> [DailyTask] {
+        let tasks = allDailyTasks
+        guard !tasks.isEmpty else { return [] }
+        let day = Calendar.current.ordinality(of: .day, in: .era, for: date) ?? 0
+        let batchSize = min(8, tasks.count)
+        let batchCount = Int(ceil(Double(tasks.count) / Double(batchSize)))
+        let batchIndex = day % max(batchCount, 1)
+        let start = batchIndex * batchSize
+        return Array(tasks.dropFirst(start).prefix(batchSize))
+    }
+
+    private static func dayKey(for date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyyMMdd"
+        return formatter.string(from: date)
     }
 
     private func removeTodayEntry(for blockId: Int) {
@@ -514,6 +607,7 @@ final class AppViewModel: ObservableObject {
                     )
                 }
                 replaceEntries(of: .githubCommit, with: entries)
+                applyGitHubCommitAchievements(commits: commits, referenceDate: Date())
                 summary.append("GitHub \(entries.count)コミット")
             } catch let error as GitHubServiceError {
                 failures.append(error.localizedDescription)
@@ -792,58 +886,60 @@ final class AppViewModel: ObservableObject {
 
     private static let demoReferenceDate = Calendar.current.date(from: DateComponents(year: 2026, month: 4, day: 14, hour: 19, minute: 30)) ?? .now
 
+    private static let demoMainGoal = "自分の思想と技術を「未踏ITに向けた提案書」として提出する"
+
     private static func makeDemoCategories(aligned: Bool = false) -> [MandalartCategory] {
         [
             MandalartCategory(
-                id: 1, title: "GitHubで積み上げる", color: .blue,
+                id: 1, title: "本質的な技術力・実装力の深化", color: .blue,
                 blocks: [
-                    MandalartBlock(id: 101, title: "毎日3コミット出す", progress: aligned ? 92 : 55, resonance: 90, cleared: false),
-                    MandalartBlock(id: 102, title: "レビュー依頼を投げる", progress: aligned ? 88 : 35, resonance: 76, cleared: false),
-                    MandalartBlock(id: 103, title: "Issueを整理する", progress: aligned ? 75 : 42, resonance: 68, cleared: false),
-                    MandalartBlock(id: 104, title: "PR本文を改善する", progress: aligned ? 64 : 20, resonance: 58, cleared: false),
-                    MandalartBlock(id: 105, title: "READMEを磨く", progress: aligned ? 70 : 24, resonance: 52, cleared: false),
-                    MandalartBlock(id: 106, title: "デモ環境を安定化", progress: aligned ? 82 : 46, resonance: 77, cleared: false),
-                    MandalartBlock(id: 107, title: "CIエラーを潰す", progress: aligned ? 78 : 38, resonance: 66, cleared: false),
-                    MandalartBlock(id: 108, title: "タグを揃える", progress: aligned ? 65 : 18, resonance: 44, cleared: false),
+                    MandalartBlock(id: 101, title: "Qiitaを読む", progress: aligned ? 92 : 55, resonance: 0, cleared: false),
+                    MandalartBlock(id: 102, title: "毎日コミットする", progress: aligned ? 88 : 35, resonance: 0, cleared: false),
+                    MandalartBlock(id: 103, title: "Rustを手で書く", progress: aligned ? 75 : 42, resonance: 0, cleared: false),
+                    MandalartBlock(id: 104, title: "技術書を読む", progress: aligned ? 64 : 20, resonance: 0, cleared: false),
+                    MandalartBlock(id: 105, title: "論文に触れる", progress: aligned ? 70 : 24, resonance: 0, cleared: false),
+                    MandalartBlock(id: 106, title: "公式ドキュメントを活用する", progress: aligned ? 82 : 46, resonance: 0, cleared: false),
+                    MandalartBlock(id: 107, title: "資格試験の過去問を解く", progress: aligned ? 78 : 38, resonance: 0, cleared: false),
+                    MandalartBlock(id: 108, title: "Linuxと仲良くなる", progress: aligned ? 65 : 18, resonance: 0, cleared: false),
                 ]
             ),
             MandalartCategory(
-                id: 2, title: "発表準備を進める", color: .orange,
+                id: 2, title: "ソフトスキルの向上", color: .orange,
                 blocks: [
-                    MandalartBlock(id: 201, title: "プレゼンスライドを作る", progress: aligned ? 90 : 62, resonance: 88, cleared: false),
-                    MandalartBlock(id: 202, title: "刺さる1シーンを磨く", progress: aligned ? 86 : 48, resonance: 95, cleared: false),
-                    MandalartBlock(id: 203, title: "デモ台本を書く", progress: aligned ? 92 : 60, resonance: 90, cleared: false),
-                    MandalartBlock(id: 204, title: "質疑応答を想定する", progress: aligned ? 73 : 34, resonance: 70, cleared: false),
-                    MandalartBlock(id: 205, title: "3分で話せるようにする", progress: aligned ? 85 : 41, resonance: 82, cleared: false),
-                    MandalartBlock(id: 206, title: "導入の一言を決める", progress: aligned ? 88 : 29, resonance: 76, cleared: false),
-                    MandalartBlock(id: 207, title: "比較対象を整理する", progress: aligned ? 77 : 32, resonance: 58, cleared: false),
-                    MandalartBlock(id: 208, title: "審査員への刺さりどころを言語化", progress: aligned ? 80 : 36, resonance: 74, cleared: false),
+                    MandalartBlock(id: 201, title: "先輩・後輩と積極的に話す", progress: aligned ? 90 : 62, resonance: 0, cleared: false),
+                    MandalartBlock(id: 202, title: "ファゴットの練習をする", progress: aligned ? 86 : 48, resonance: 0, cleared: false),
+                    MandalartBlock(id: 203, title: "LINEを早く返す", progress: aligned ? 92 : 60, resonance: 0, cleared: false),
+                    MandalartBlock(id: 204, title: "他人のポストにいいねする", progress: aligned ? 73 : 34, resonance: 0, cleared: false),
+                    MandalartBlock(id: 205, title: "会議で発言する", progress: aligned ? 85 : 41, resonance: 0, cleared: false),
+                    MandalartBlock(id: 206, title: "新聞を読む", progress: aligned ? 88 : 29, resonance: 0, cleared: false),
+                    MandalartBlock(id: 207, title: "物語作品に触れる", progress: aligned ? 77 : 32, resonance: 0, cleared: false),
+                    MandalartBlock(id: 208, title: "カープの試合結果を把握する", progress: aligned ? 80 : 36, resonance: 0, cleared: false),
                 ]
             ),
             MandalartCategory(
-                id: 3, title: "行動を証拠に残す", color: .green,
+                id: 3, title: "健康的な見た目になる", color: .green,
                 blocks: [
-                    MandalartBlock(id: 301, title: "作業をCalendarに入れる", progress: aligned ? 82 : 30, resonance: 72, cleared: false),
-                    MandalartBlock(id: 302, title: "作業ログを毎日振り返る", progress: aligned ? 91 : 44, resonance: 84, cleared: false),
-                    MandalartBlock(id: 303, title: "終わった作業を記録する", progress: aligned ? 95 : 26, resonance: 94, cleared: false),
-                    MandalartBlock(id: 304, title: "進捗をメンバー共有", progress: aligned ? 70 : 22, resonance: 52, cleared: false),
-                    MandalartBlock(id: 305, title: "スクショを残す", progress: aligned ? 67 : 18, resonance: 40, cleared: false),
-                    MandalartBlock(id: 306, title: "データを翌日に持ち越さない", progress: aligned ? 88 : 28, resonance: 81, cleared: false),
-                    MandalartBlock(id: 307, title: "通知で自分を追い込む", progress: aligned ? 78 : 40, resonance: 74, cleared: false),
-                    MandalartBlock(id: 308, title: "フィードバックを反映する", progress: aligned ? 83 : 12, resonance: 93, cleared: false),
+                    MandalartBlock(id: 301, title: "23時までに寝る", progress: aligned ? 82 : 30, resonance: 0, cleared: false),
+                    MandalartBlock(id: 302, title: "朝イチで水を飲む", progress: aligned ? 91 : 44, resonance: 0, cleared: false),
+                    MandalartBlock(id: 303, title: "ジムに行く", progress: aligned ? 95 : 26, resonance: 0, cleared: false),
+                    MandalartBlock(id: 304, title: "体重を測る", progress: aligned ? 70 : 22, resonance: 0, cleared: false),
+                    MandalartBlock(id: 305, title: "スキンケアをする", progress: aligned ? 67 : 18, resonance: 0, cleared: false),
+                    MandalartBlock(id: 306, title: "ストレッチをする", progress: aligned ? 88 : 28, resonance: 0, cleared: false),
+                    MandalartBlock(id: 307, title: "果物を食べる", progress: aligned ? 78 : 40, resonance: 0, cleared: false),
+                    MandalartBlock(id: 308, title: "お風呂に浸かる", progress: aligned ? 83 : 12, resonance: 0, cleared: false),
                 ]
             ),
             MandalartCategory(
-                id: 4, title: "チームの温度を上げる", color: .purple,
+                id: 4, title: "ドメイン知識の強化", color: .purple,
                 blocks: [
-                    MandalartBlock(id: 401, title: "毎朝共有タイム", progress: aligned ? 88 : 58, resonance: 76, cleared: false),
-                    MandalartBlock(id: 402, title: "詰まりをすぐ相談", progress: aligned ? 90 : 66, resonance: 88, cleared: false),
-                    MandalartBlock(id: 403, title: "役割を明文化する", progress: aligned ? 81 : 30, resonance: 64, cleared: false),
-                    MandalartBlock(id: 404, title: "不安を言葉にする", progress: aligned ? 78 : 24, resonance: 56, cleared: false),
-                    MandalartBlock(id: 405, title: "レビューをポジティブに返す", progress: aligned ? 92 : 46, resonance: 80, cleared: false),
-                    MandalartBlock(id: 406, title: "最後までやり切る", progress: aligned ? 96 : 64, resonance: 95, cleared: false),
-                    MandalartBlock(id: 407, title: "焦りを可視化する", progress: aligned ? 75 : 18, resonance: 63, cleared: false),
-                    MandalartBlock(id: 408, title: "プレッシャーを味方にする", progress: aligned ? 84 : 21, resonance: 78, cleared: false),
+                    MandalartBlock(id: 401, title: "医療情報のトレンドを追う", progress: aligned ? 88 : 58, resonance: 0, cleared: false),
+                    MandalartBlock(id: 402, title: "レポートを書く", progress: aligned ? 90 : 66, resonance: 0, cleared: false),
+                    MandalartBlock(id: 403, title: "スケッチをする", progress: aligned ? 81 : 30, resonance: 0, cleared: false),
+                    MandalartBlock(id: 404, title: "臨床を軽視しない", progress: aligned ? 78 : 24, resonance: 0, cleared: false),
+                    MandalartBlock(id: 405, title: "医療情報規格の単語学習", progress: aligned ? 92 : 46, resonance: 0, cleared: false),
+                    MandalartBlock(id: 406, title: "CBTの情報を仕入れる", progress: aligned ? 96 : 64, resonance: 0, cleared: false),
+                    MandalartBlock(id: 407, title: "医療AIの事例を調べる", progress: aligned ? 75 : 18, resonance: 0, cleared: false),
+                    MandalartBlock(id: 408, title: "医療現場の課題を調べる", progress: aligned ? 84 : 21, resonance: 0, cleared: false),
                 ]
             )
         ]
@@ -857,6 +953,14 @@ final class AppViewModel: ObservableObject {
             JournalEntry(id: "demo-manual-1", date: demoReferenceDate.addingTimeInterval(-60 * 90), kind: .manualCompleted, source: "Manual", systemImageName: "checkmark.circle.fill", iconHex: "22c55e", action: "アクションを完了しました", detail: "プレゼン練習（3分）", targetGoal: mainGoal, relatedBlockId: 205),
             JournalEntry(id: "demo-manual-2", date: demoReferenceDate.addingTimeInterval(-60 * 70), kind: .manualCompleted, source: "Manual", systemImageName: "checkmark.circle.fill", iconHex: "22c55e", action: "アクションを完了しました", detail: "スライドのフィードバック反映", targetGoal: mainGoal, relatedBlockId: 308),
             JournalEntry(id: "demo-system-1", date: demoReferenceDate.addingTimeInterval(-60 * 20), kind: .system, source: "System", systemImageName: "eye.trianglebadge.exclamationmark.fill", iconHex: "dc2626", action: "記録されていないアクションがあります", detail: "外部ログに対応する記録が見つかりませんでした", targetGoal: mainGoal, relatedBlockId: nil),
+        ]
+    }
+
+    private static func makeOfflineJournalEntries(mainGoal: String) -> [JournalEntry] {
+        [
+            JournalEntry(id: "offline-system-1", date: demoReferenceDate.addingTimeInterval(-60 * 10), kind: .system, source: "System", systemImageName: "wifi.slash", iconHex: "f97316", action: "オフラインで利用中", detail: "入力内容は端末に保存され、通信が戻った後に同期できます。", targetGoal: mainGoal, relatedBlockId: nil),
+            JournalEntry(id: "offline-manual-1", date: demoReferenceDate.addingTimeInterval(-60 * 35), kind: .manualCompleted, source: "Manual", systemImageName: "checkmark.circle.fill", iconHex: "22c55e", action: "アクションを完了しました", detail: "朝イチで水を飲む", targetGoal: mainGoal, relatedBlockId: 302),
+            JournalEntry(id: "offline-manual-2", date: demoReferenceDate.addingTimeInterval(-60 * 70), kind: .manualCompleted, source: "Manual", systemImageName: "checkmark.circle.fill", iconHex: "22c55e", action: "アクションを完了しました", detail: "Qiitaを読む", targetGoal: mainGoal, relatedBlockId: 101),
         ]
     }
 

@@ -3,6 +3,8 @@ import SwiftUI
 struct BlockMandalartView: View {
     @EnvironmentObject var vm: AppViewModel
     @State private var selectedBlock: SelectedBlock? = nil
+    @State private var editingCategory: SelectedCategory? = nil
+    @State private var isEditingMainGoal = false
     @Namespace private var ns
 
     var body: some View {
@@ -10,19 +12,20 @@ struct BlockMandalartView: View {
             Color.zinc950.ignoresSafeArea()
 
             ScrollView {
-                VStack(spacing: 40) {
-                    // Legend
-                    HStack(spacing: 20) {
-                        legendItem(color: Color.zinc800, label: "未着手")
-                        legendItem(color: .white,        label: "継続中")
-                        legendItem(color: Color(hex: "facc15"), label: "クリア済", glow: true)
-                    }
-                    .padding(.top, 16)
+                VStack(spacing: 36) {
+                    goalHeader
 
                     ForEach(vm.categories) { category in
                         CategoryGridView(
                             category: category,
                             namespace: ns,
+                            onCategoryTap: {
+                                editingCategory = SelectedCategory(
+                                    categoryId: category.id,
+                                    title: category.title,
+                                    color: category.color
+                                )
+                            },
                             onTap: { block in
                                 withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
                                     selectedBlock = SelectedBlock(block: block, categoryId: category.id, color: category.color)
@@ -31,6 +34,7 @@ struct BlockMandalartView: View {
                         )
                     }
                 }
+                .padding(.top, 28)
                 .padding(.bottom, 120)
             }
 
@@ -41,46 +45,60 @@ struct BlockMandalartView: View {
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                HStack(spacing: 6) {
-                    Image(systemName: "square.3.layers.3d")
-                        .foregroundColor(Color.indigo400)
-                    Text("現在の目標")
-                        .font(.system(size: 18, weight: .black))
-                        .foregroundColor(.white)
-                }
-            }
-            ToolbarItem(placement: .navigationBarTrailing) {
-                viewModeToggle
-            }
-        }
         .toolbarBackground(Color.zinc950, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
+        .sheet(isPresented: $isEditingMainGoal) {
+            MainGoalEditorView(title: vm.mainGoal) { title in
+                vm.mainGoal = title
+            }
+            .presentationDetents([.height(220)])
+        }
+        .sheet(item: $editingCategory) { category in
+            CategoryTitleEditorView(category: category) { title in
+                vm.updateCategoryTitle(categoryId: category.categoryId, title: title)
+            }
+            .presentationDetents([.height(220)])
+        }
     }
 
-    // MARK: - View Mode Toggle
-    @ViewBuilder
-    private var viewModeToggle: some View {
-        HStack(spacing: 4) {
-            Label("ブロック", systemImage: "square.3.layers.3d")
-                .font(.system(size: 11, weight: .bold))
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(Color.zinc800)
-                .foregroundColor(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-            NavigationLink(destination: MandalartListView()) {
-                Label("リスト", systemImage: "square.grid.2x2")
-                    .font(.system(size: 11, weight: .bold))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .foregroundColor(Color.zinc500)
+    private var goalHeader: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            Button {
+                isEditingMainGoal = true
+            } label: {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("中心の目標")
+                        .font(.system(size: 11, weight: .black))
+                        .foregroundColor(Color.zinc500)
+                        .tracking(2)
+
+                    Text(vm.mainGoal.isEmpty ? "タップして目標を入力" : vm.mainGoal)
+                        .font(.system(size: 32, weight: .black))
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.leading)
+                        .lineLimit(3)
+                        .minimumScaleFactor(0.75)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding(22)
+                .background(Color.zinc900)
+                .clipShape(RoundedRectangle(cornerRadius: 26))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 26)
+                        .stroke(Color.zinc800, lineWidth: 0.5)
+                )
             }
             .buttonStyle(.plain)
+
+            HStack(spacing: 20) {
+                legendItem(color: Color.zinc800, label: "未着手")
+                legendItem(color: .white, label: "継続中")
+                legendItem(color: Color(hex: "facc15"), label: "クリア済", glow: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .center)
         }
-        .background(Color.zinc900)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .padding(.horizontal, 20)
     }
 
     // MARK: - Block Detail Overlay
@@ -96,10 +114,6 @@ struct BlockMandalartView: View {
         BlockDetailView(
             sel: sel,
             namespace: ns,
-            onClear: {
-                vm.clearBlock(categoryId: sel.categoryId, blockId: sel.block.id)
-                withAnimation(.spring()) { selectedBlock = nil }
-            },
             onDismiss: {
                 withAnimation(.spring()) { selectedBlock = nil }
             }
@@ -129,14 +143,54 @@ struct SelectedBlock {
     let color: CategoryColor
 }
 
+struct SelectedCategory: Identifiable {
+    let categoryId: Int
+    let title: String
+    let color: CategoryColor
+
+    var id: Int { categoryId }
+}
+
+private enum LinkedServiceTemplate: String, Identifiable {
+    case github
+    case googleCalendar
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .github: return "GitHub"
+        case .googleCalendar: return "Google Calendar"
+        }
+    }
+
+    var iconName: String {
+        switch self {
+        case .github: return "chevron.left.forwardslash.chevron.right"
+        case .googleCalendar: return "calendar"
+        }
+    }
+
+    var tint: Color {
+        switch self {
+        case .github: return Color.zinc300
+        case .googleCalendar: return Color(hex: "60a5fa")
+        }
+    }
+}
+
 // MARK: - Category Grid View
 struct CategoryGridView: View {
     let category: MandalartCategory
     let namespace: Namespace.ID
+    let onCategoryTap: () -> Void
     let onTap: (MandalartBlock) -> Void
 
     private var displayTitle: String {
         category.title.isEmpty ? "テーマを入力" : category.title
+    }
+    private var isPlaceholder: Bool {
+        category.title.isEmpty
     }
 
     // Maps 8 blocks to a 3x3 grid (center = category label)
@@ -149,7 +203,13 @@ struct CategoryGridView: View {
         VStack(spacing: 12) {
             Text(displayTitle)
                 .font(.system(size: 17, weight: .black))
-                .foregroundColor(category.color.primary)
+                .foregroundColor(isPlaceholder ? Color.zinc300 : category.color.primary)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .minimumScaleFactor(0.85)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity)
+                .onTapGesture(perform: onCategoryTap)
 
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
                 ForEach(Array(gridOrder.enumerated()), id: \.offset) { index, block in
@@ -167,11 +227,16 @@ struct CategoryGridView: View {
                                 )
                             Text(displayTitle)
                                 .font(.system(size: 9, weight: .black))
-                                .foregroundColor(category.color.primary)
+                                .foregroundColor(isPlaceholder ? .white : category.color.primary)
                                 .multilineTextAlignment(.center)
+                                .lineLimit(2)
+                                .minimumScaleFactor(0.8)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .frame(maxWidth: .infinity)
                                 .padding(6)
                         }
                         .aspectRatio(1, contentMode: .fit)
+                        .onTapGesture(perform: onCategoryTap)
                     }
                 }
             }
@@ -197,6 +262,9 @@ struct BlockCell: View {
     private var activeBorder: Color { block.cleared ? Color(hex: "fde047") : color.border }
     private var displayTitle: String {
         block.title.isEmpty ? "タップして入力" : block.title
+    }
+    private var starLevel: Int {
+        min(3, max(0, Int((block.progress / 33.333).rounded())))
     }
 
     var body: some View {
@@ -228,21 +296,18 @@ struct BlockCell: View {
                     }
                     .overlay(alignment: .topLeading) {
                         Text(displayTitle)
-                            .font(.system(size: 9, weight: .bold))
+                            .font(.system(size: 14, weight: .black))
                             .foregroundColor(block.title.isEmpty ? .white.opacity(0.72) : (block.cleared ? Color(hex: "78350f") : .white))
+                            .multilineTextAlignment(.leading)
                             .lineLimit(3)
-                            .padding(6)
+                            .minimumScaleFactor(0.7)
+                            .allowsTightening(true)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                            .padding(7)
                     }
                     .overlay(alignment: .bottomTrailing) {
-                        if block.cleared {
-                            Image(systemName: "sparkles")
-                                .font(.system(size: 10))
-                                .foregroundColor(Color(hex: "92400e"))
-                                .padding(5)
-                        } else {
-                            resonanceDots
-                                .padding(5)
-                        }
+                        starRow
+                            .padding(5)
                     }
                     .overlay(
                         RoundedRectangle(cornerRadius: 14)
@@ -257,13 +322,12 @@ struct BlockCell: View {
         .padding(.top, CGFloat(maxExtrusion))
     }
 
-    private var resonanceDots: some View {
-        let level = Int(ceil(block.resonance / 100 * 3))
-        return HStack(spacing: 2) {
-            ForEach(0..<3, id: \.self) { i in
-                Circle()
-                    .fill(i < level ? Color.white : Color.black.opacity(0.2))
-                    .frame(width: 5, height: 5)
+    private var starRow: some View {
+        HStack(spacing: 1) {
+            ForEach(0..<3, id: \.self) { index in
+                Image(systemName: index < starLevel ? "star.fill" : "star")
+                    .font(.system(size: 7, weight: .black))
+                    .foregroundColor(index < starLevel ? Color(hex: "facc15") : Color.white.opacity(0.45))
             }
         }
     }
@@ -273,8 +337,28 @@ struct BlockCell: View {
 struct BlockDetailView: View {
     let sel: SelectedBlock
     let namespace: Namespace.ID
-    let onClear: () -> Void
     let onDismiss: () -> Void
+
+    @EnvironmentObject private var vm: AppViewModel
+    @State private var titleText: String
+    @State private var selectedTemplateService: LinkedServiceTemplate?
+    @State private var metricValue = 3
+    @FocusState private var isTitleFocused: Bool
+
+    private var completionCount: Int {
+        vm.completionCount(for: sel.block.id)
+    }
+
+    private var starLevel: Int {
+        vm.starLevel(for: sel.block.id)
+    }
+
+    init(sel: SelectedBlock, namespace: Namespace.ID, onDismiss: @escaping () -> Void) {
+        self.sel = sel
+        self.namespace = namespace
+        self.onDismiss = onDismiss
+        _titleText = State(initialValue: sel.block.title)
+    }
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -301,10 +385,21 @@ struct BlockDetailView: View {
                                 .font(.system(size: 10, weight: .bold))
                                 .foregroundColor(Color.zinc500)
                                 .tracking(1)
-                            Text(sel.block.title)
+                            TextField("アクションを入力", text: $titleText)
                                 .font(.system(size: 20, weight: .black))
                                 .foregroundColor(.white)
-                                .lineLimit(2)
+                                .focused($isTitleFocused)
+                                .submitLabel(.done)
+                                .onSubmit(saveTitle)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 10)
+                                .background(Color.zinc800)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(isTitleFocused ? sel.color.primary : Color.zinc700, lineWidth: 1)
+                                )
+                            linkedTemplatePicker
                         }
                         Spacer()
                         if sel.block.cleared {
@@ -317,127 +412,266 @@ struct BlockDetailView: View {
                         }
                     }
 
-                    // Progress bar
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack {
-                            Text("進捗度 (Progress)")
-                                .font(.system(size: 13, weight: .bold))
-                                .foregroundColor(Color.zinc400)
-                            Spacer()
-                            Text("\(Int(sel.block.progress))%")
-                                .font(.system(size: 13, weight: .bold))
-                                .foregroundColor(.white)
-                        }
-                        GeometryReader { g in
-                            ZStack(alignment: .leading) {
-                                Capsule().fill(Color.zinc800).frame(height: 8)
-                                Capsule()
-                                    .fill(sel.block.cleared ? Color(hex: "facc15") : sel.color.primary)
-                                    .frame(width: g.size.width * CGFloat(sel.block.progress / 100), height: 8)
-                            }
-                        }
-                        .frame(height: 8)
-                    }
-
-                    // Resonance bar
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack {
-                            Text("同期度")
-                                .font(.system(size: 13, weight: .bold))
-                                .foregroundColor(Color.zinc400)
-                            Spacer()
-                            Text("\(Int(sel.block.resonance)) / 100")
-                                .font(.system(size: 13, weight: .bold))
-                                .foregroundColor(.white)
-                        }
-                        Text("目標との同期度合い")
-                            .font(.system(size: 10))
-                            .foregroundColor(Color.zinc500)
-
-                        HStack(spacing: 3) {
-                            ForEach(0..<10, id: \.self) { i in
-                                RoundedRectangle(cornerRadius: 2)
-                                    .fill(
-                                        i < Int(ceil(sel.block.resonance / 10))
-                                        ? (sel.block.cleared ? Color(hex: "facc15") : sel.color.primary)
-                                        : Color.zinc800
-                                    )
-                                    .frame(height: 8)
-                            }
-                        }
-                    }
-
-                    // GitHub auto tracking
+                    // Star goal
                     VStack(alignment: .leading, spacing: 8) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "number")
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundColor(Color.zinc400)
-                            Text("GitHub 自動計測")
+                        HStack {
+                            Text("達成スター")
                                 .font(.system(size: 13, weight: .bold))
                                 .foregroundColor(Color.zinc400)
+                            Spacer()
+                            Text("\(completionCount) 回達成")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundColor(.white)
                         }
-                        Text("「毎日3コミット」のようなアクションは、コミットメッセージではなくGitHubから取得した今日のコミット件数で判定します。")
-                            .font(.system(size: 10))
-                            .foregroundColor(Color.zinc500)
-                            .lineSpacing(2)
-                    }
-                    .padding(12)
-                    .background(Color.zinc800.opacity(0.55))
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
 
-                    // Actions
-                    if !sel.block.cleared {
-                        VStack(spacing: 10) {
-                            Button(action: onClear) {
-                                Label("目標をクリアする", systemImage: "checkmark.circle.fill")
-                                    .font(.system(size: 15, weight: .bold))
-                                    .foregroundColor(.white)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 14)
-                                    .background(Color.zinc800)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 14)
-                                            .stroke(Color.zinc700, lineWidth: 0.5)
-                                    )
-                                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                        HStack(spacing: 8) {
+                            ForEach(0..<3, id: \.self) { index in
+                                Image(systemName: index < starLevel ? "star.fill" : "star")
+                                    .font(.system(size: 22, weight: .black))
+                                    .foregroundColor(index < starLevel ? Color(hex: "facc15") : Color.zinc700)
                             }
-                            Button(action: onDismiss) {
-                                Text("閉じる")
-                                    .font(.system(size: 15, weight: .bold))
-                                    .foregroundColor(Color.zinc400)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 12)
-                            }
+                            Spacer()
+                            Text("振り返りで「できた」を2回/5回/10回押すと星が増えます")
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundColor(Color.zinc500)
                         }
-                    } else {
-                        VStack(spacing: 10) {
-                            Button(action: onDismiss) {
-                                Label("閉じる", systemImage: "checkmark")
-                                    .font(.system(size: 15, weight: .black))
-                                    .foregroundColor(Color(hex: "1c1917"))
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 14)
-                                    .background(Color(hex: "facc15"))
-                                    .clipShape(RoundedRectangle(cornerRadius: 14))
-                                    .shadow(color: Color(hex: "facc15").opacity(0.4), radius: 12)
-                            }
-                            Button(action: onDismiss) {
-                                Text("閉じる")
-                                    .font(.system(size: 15, weight: .bold))
-                                    .foregroundColor(Color.zinc400)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 12)
-                            }
-                        }
+                    }
+
+                    Button(action: onDismiss) {
+                        Text("閉じる")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundColor(Color.zinc400)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
                     }
                 }
                 .padding(24)
             }
         }
         .fixedSize(horizontal: false, vertical: true)
+        .onAppear {
+            if sel.block.title.isEmpty {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                    isTitleFocused = true
+                }
+            }
+        }
+        .onDisappear(perform: saveTitle)
     }
 
+    private var linkedTemplatePicker: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                serviceTemplateButton(.github)
+                serviceTemplateButton(.googleCalendar)
+            }
+
+            if let selectedTemplateService {
+                VStack(alignment: .leading, spacing: 8) {
+                    Stepper(value: $metricValue, in: 1...20) {
+                        Text("目標数: \(metricValue)")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(Color.zinc300)
+                    }
+                    .tint(sel.color.primary)
+
+                    switch selectedTemplateService {
+                    case .github:
+                        HStack(spacing: 8) {
+                            templateChip("\(metricValue) commit") {
+                                titleText = "毎日\(metricValue)コミット"
+                                saveTitle()
+                            }
+                            templateChip("\(metricValue) PR") {
+                                titleText = "毎日\(metricValue) PR"
+                                saveTitle()
+                            }
+                            templateChip("\(metricValue) Issue") {
+                                titleText = "毎日\(metricValue) Issue"
+                                saveTitle()
+                            }
+                        }
+                        Text("自動達成はcommitのみ対応しています。PR/Issueはテンプレートとして入力できます。")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundColor(Color.zinc500)
+
+                    case .googleCalendar:
+                        HStack(spacing: 8) {
+                            templateChip("\(metricValue) 予定", isEnabled: false) {}
+                            templateChip("\(metricValue) 作業枠", isEnabled: false) {}
+                        }
+                        Text("Calendarは今は予定ログの取得のみです。予定数での自動達成は次の拡張候補です。")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundColor(Color.zinc500)
+                    }
+                }
+                .padding(10)
+                .background(Color.zinc800.opacity(0.65))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
+        }
+        .padding(.top, 4)
+    }
+
+    private func serviceTemplateButton(_ service: LinkedServiceTemplate) -> some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                selectedTemplateService = selectedTemplateService == service ? nil : service
+            }
+        } label: {
+            Label(service.title, systemImage: service.iconName)
+                .font(.system(size: 11, weight: .black))
+                .foregroundColor(selectedTemplateService == service ? Color.zinc950 : service.tint)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 7)
+                .background(selectedTemplateService == service ? service.tint : Color.zinc800)
+                .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func templateChip(_ title: String, isEnabled: Bool = true, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(isEnabled ? title : "\(title) 準備中")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(isEnabled ? .white : Color.zinc500)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 7)
+                .background(isEnabled ? sel.color.primary : Color.zinc900)
+                .clipShape(Capsule())
+        }
+        .disabled(!isEnabled)
+        .buttonStyle(.plain)
+    }
+
+    private func saveTitle() {
+        vm.updateBlockTitle(
+            categoryId: sel.categoryId,
+            blockId: sel.block.id,
+            title: titleText.trimmingCharacters(in: .whitespacesAndNewlines)
+        )
+    }
+}
+
+struct CategoryTitleEditorView: View {
+    let category: SelectedCategory
+    let onSave: (String) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var titleText: String
+    @FocusState private var isFocused: Bool
+
+    init(category: SelectedCategory, onSave: @escaping (String) -> Void) {
+        self.category = category
+        self.onSave = onSave
+        _titleText = State(initialValue: category.title)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("テーマを入力")
+                .font(.system(size: 18, weight: .black))
+                .foregroundColor(Color.stone900)
+
+            TextField("例: 技術力、健康、発信", text: $titleText)
+                .font(.system(size: 16, weight: .bold))
+                .foregroundColor(Color.stone900)
+                .tint(category.color.primary)
+                .textInputAutocapitalization(.never)
+                .focused($isFocused)
+                .submitLabel(.done)
+                .onSubmit(saveAndDismiss)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+                .background(Color.stone100)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(isFocused ? category.color.primary : Color.stone200, lineWidth: 1)
+                )
+
+            Button(action: saveAndDismiss) {
+                Text("保存")
+                    .font(.system(size: 15, weight: .black))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 13)
+                    .background(category.color.primary)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+            }
+        }
+        .padding(24)
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                isFocused = true
+            }
+        }
+    }
+
+    private func saveAndDismiss() {
+        onSave(titleText.trimmingCharacters(in: .whitespacesAndNewlines))
+        dismiss()
+    }
+}
+
+struct MainGoalEditorView: View {
+    let title: String
+    let onSave: (String) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var titleText: String
+    @FocusState private var isFocused: Bool
+
+    init(title: String, onSave: @escaping (String) -> Void) {
+        self.title = title
+        self.onSave = onSave
+        _titleText = State(initialValue: title)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("中心の目標を入力")
+                .font(.system(size: 18, weight: .black))
+                .foregroundColor(Color.stone900)
+
+            TextField("例: 技育CAMPで優勝する", text: $titleText)
+                .font(.system(size: 16, weight: .bold))
+                .foregroundColor(Color.stone900)
+                .tint(Color.indigo600)
+                .focused($isFocused)
+                .submitLabel(.done)
+                .onSubmit(saveAndDismiss)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+                .background(Color.stone100)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(isFocused ? Color.indigo600 : Color.stone200, lineWidth: 1)
+                )
+
+            Button(action: saveAndDismiss) {
+                Text("保存")
+                    .font(.system(size: 15, weight: .black))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 13)
+                    .background(Color.indigo600)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+            }
+        }
+        .padding(24)
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                isFocused = true
+            }
+        }
+    }
+
+    private func saveAndDismiss() {
+        onSave(titleText.trimmingCharacters(in: .whitespacesAndNewlines))
+        dismiss()
+    }
 }
 
 #Preview {

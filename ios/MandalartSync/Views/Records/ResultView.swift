@@ -5,7 +5,6 @@ struct ResultView: View {
     @State private var displayedRate: Int = 0
     @State private var pulseScale: CGFloat = 1.0
     @State private var pulseOpacity: Double = 0.3
-    @State private var navigateToJournal = false
 
     private var targetRate: Int { vm.todayCompletionRate }
     private var completedActions: Int { vm.todayCompletedCount }
@@ -69,10 +68,6 @@ struct ResultView: View {
                 .ignoresSafeArea()
         )
         .navigationBarHidden(true)
-        .navigationDestination(isPresented: $navigateToJournal) {
-            SyncJournalView()
-        }
-
         .onAppear {
             animateRate()
             triggerGapPresentationIfNeeded()
@@ -220,17 +215,9 @@ struct ResultView: View {
     // MARK: - Action Breakdown
     private var actionBreakdownSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Button(action: { navigateToJournal = true }) {
-                HStack {
-                    Label("今日の行動", systemImage: "waveform.path.ecg")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(Color.stone800)
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 13))
-                        .foregroundColor(Color.stone400)
-                }
-            }
+            Label("最近の行動", systemImage: "waveform.path.ecg")
+                .font(.system(size: 13, weight: .bold))
+                .foregroundColor(Color.stone800)
 
             summaryCard(
                 iconName: "checkmark.circle.fill",
