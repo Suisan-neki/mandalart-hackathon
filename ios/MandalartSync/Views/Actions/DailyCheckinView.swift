@@ -188,7 +188,7 @@ struct DailyCheckinView: View {
             }
             Spacer()
             Button(action: { navigateToResult = true }) {
-                Label("同期結果を見る", systemImage: "bolt.fill")
+                Label("今日の結果を見る", systemImage: "chart.bar.fill")
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)

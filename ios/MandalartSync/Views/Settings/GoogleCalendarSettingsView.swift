@@ -11,16 +11,16 @@ struct GoogleCalendarSettingsView: View {
         NavigationStack {
             Form {
                 Section("カレンダー") {
-                    TextField("calendarId", text: $calendarId)
+                    TextField("例: primary", text: $calendarId)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
 
-                    Text("通常は `primary` のままで使えます。共有カレンダーを使う場合は対象の calendarId を入力してください。")
+                    Text("通常は primary のままで使えます。共有カレンダーを使う場合は対象の ID を入力してください。")
                         .font(.footnote)
                         .foregroundColor(.secondary)
                 }
 
-                Section("Access Token") {
+                Section("アクセストークン") {
                     SecureField("Google OAuth アクセストークン", text: $accessToken)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()

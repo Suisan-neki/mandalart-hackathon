@@ -12,10 +12,10 @@ struct GitHubSettingsView: View {
         NavigationStack {
             Form {
                 Section("リポジトリ") {
-                    TextField("owner", text: $owner)
+                    TextField("ユーザー名", text: $owner)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
-                    TextField("repository", text: $repository)
+                    TextField("リポジトリ名", text: $repository)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                 }

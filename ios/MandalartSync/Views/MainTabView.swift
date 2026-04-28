@@ -28,7 +28,7 @@ struct MainTabView: View {
                 ResultView()
             }
             .tabItem {
-                Label("記録", systemImage: "chart.bar.fill")
+                Label("結果", systemImage: "chart.bar.fill")
             }
             .tag(2)
 

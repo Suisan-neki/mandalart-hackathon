@@ -79,7 +79,7 @@ struct SplashView: View {
                             .font(.system(size: 28, weight: .black, design: .rounded))
                             .foregroundColor(Color.amber600)
                     }
-                    Text("掲げた目標と現実を、優しく同期する。")
+                    Text("目標と行動をつなぐ。")
                         .font(.system(size: 13, weight: .medium))
                         .foregroundColor(Color.stone500)
                         .tracking(1)

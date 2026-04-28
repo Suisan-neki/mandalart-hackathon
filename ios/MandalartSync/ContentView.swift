@@ -15,7 +15,7 @@ struct ContentView: View {
         }
         .animation(.easeInOut(duration: 0.5), value: showSplash)
         .onAppear {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                 showSplash = false
             }
         }

@@ -110,7 +110,7 @@ struct CategoryCard: View {
                         .padding(.top, 4)
                         .textInputAutocapitalization(.never)
 
-                    Text("このサブテーマを構成する8つのアクション要素です。これらを達成することで「\(category.title)」が現実のものになります。")
+                    Text("「\(category.title)」を構成する8つのアクション。タップして編集できます。")
                         .font(.system(size: 12))
                         .foregroundColor(Color.zinc400)
                         .padding(.horizontal, 20)

@@ -129,7 +129,7 @@ struct ResultView: View {
                     .shadow(color: .black.opacity(0.06), radius: 30, y: 10)
                     .overlay {
                         VStack(spacing: 4) {
-                            Text("達成率")
+                            Text("今日の完了率")
                                 .font(.system(size: 11, weight: .bold))
                                 .foregroundColor(Color.stone400)
                                 .tracking(2)
@@ -183,36 +183,36 @@ struct ResultView: View {
     private var feedbackSection: some View {
         VStack(spacing: 14) {
             if isHighRate {
-                Text("素晴らしい達成率です")
+                Text("今日もやりきった")
                     .font(.system(size: 24, weight: .black))
                     .foregroundColor(Color.stone800)
-                Text("あなたが掲げた目標と、実際の行動がしっかりと結びついています。この調子で、自分を信じて進んでいきましょう。")
+                Text("目標に向けた行動が記録にちゃんと残っている。この積み重ねが一番大事。")
                     .font(.system(size: 14))
                     .foregroundColor(Color.stone500)
                     .lineSpacing(5)
             } else if isMediumRate {
-                Text("着実に歩んでいます")
+                Text("いいペースで進んでいる")
                     .font(.system(size: 24, weight: .black))
                     .foregroundColor(Color.stone800)
-                Text("目標に向かって少しずつ着実に進んでいます。焦る必要はありません。まずは今できている自分を褒めてあげてください。")
+                Text("全部できなくても問題ない。動いた分だけ前に進んでいる。")
                     .font(.system(size: 14))
                     .foregroundColor(Color.stone500)
                     .lineSpacing(5)
             } else {
-                Text("目標の高さは、あなたの才能")
+                Text("まず1つ動かしてみよう")
                     .font(.system(size: 24, weight: .black))
                     .foregroundColor(Color.stone800)
-                Text("記録を見ると、少し目標が先行しているようです。でも大丈夫です。それはあなたが誰よりも高く飛びたいと願っている証拠だから。")
+                Text("記録が少ない日もある。明日は32個の中から1つだけ選んで、それだけやってみる。")
                     .font(.system(size: 14))
                     .foregroundColor(Color.stone500)
                     .lineSpacing(5)
 
                 // Advice card
                 VStack(alignment: .leading, spacing: 8) {
-                    Label("明日のための小さな一歩", systemImage: "scope")
+                    Label("1つだけ選ぶ", systemImage: "scope")
                         .font(.system(size: 13, weight: .bold))
                         .foregroundColor(Color.stone800)
-                    Text("自分を責める必要はありません。明日は、32個の目標の中から「これだけは絶対にやる1つ」を選んで、ハードルを極端に下げてみませんか？")
+                    Text("全部やろうとしなくていい。今日の自分が一番やれそうなアクションを1つ選んで、それだけ動く。")
                         .font(.system(size: 12))
                         .foregroundColor(Color.stone600)
                         .lineSpacing(4)
@@ -234,7 +234,7 @@ struct ResultView: View {
         VStack(alignment: .leading, spacing: 12) {
             Button(action: { navigateToJournal = true }) {
                 HStack {
-                    Label("直近の行動ログ", systemImage: "waveform.path.ecg")
+                    Label("今日の行動", systemImage: "waveform.path.ecg")
                         .font(.system(size: 13, weight: .bold))
                         .foregroundColor(Color.stone800)
                     Spacer()
@@ -321,8 +321,8 @@ struct ResultView: View {
                     iconName: "checkmark.seal.fill",
                     iconBg: Color(hex: "dcfce7"),
                     iconColor: Color(hex: "16a34a"),
-                    title: "大きなズレはまだ検出されていません",
-                    subtitle: "チェックインと同期を増やすと、ここに分析結果が出ます。"
+                    title: "今のところズレは見つかっていない",
+                    subtitle: "チェックインを続けると、ここに分析が表示されます。"
                 )
             } else {
                 ForEach(vm.topGapInsights) { insight in

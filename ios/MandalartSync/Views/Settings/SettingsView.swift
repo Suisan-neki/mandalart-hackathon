@@ -62,7 +62,7 @@ struct SettingsView: View {
                                     .font(.system(size: 14))
                                     .foregroundColor(Color.stone500)
                             }
-                            Text("リマインド通知")
+                            Text("ズレ通知")
                                 .font(.system(size: 14, weight: .bold))
                                 .foregroundColor(Color.stone800)
                         }
@@ -258,7 +258,7 @@ struct SettingsView: View {
                     Divider().padding(.horizontal, 16)
 
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("クラウド同期ドラフト")
+                        Text("外部同期")
                             .font(.system(size: 14, weight: .bold))
                             .foregroundColor(Color.stone800)
                         Text(vm.cloudSyncStatusMessage)
@@ -270,7 +270,7 @@ struct SettingsView: View {
                                 .font(.system(size: 11, weight: .medium))
                                 .foregroundColor(Color.stone400)
                         } else {
-                            Text("Firebase 接続前の下書きペイロードをローカルに保持しています。")
+                            Text("同期未実行。ホーム画面の同期ボタンで実行できます。")
                                 .font(.system(size: 11, weight: .medium))
                                 .foregroundColor(Color.stone400)
                         }

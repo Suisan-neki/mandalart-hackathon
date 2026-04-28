@@ -377,7 +377,7 @@ final class AppViewModel: ObservableObject {
             gapInsights = []
             syncErrorMessage = nil
             lastCloudSyncAt = Date()
-            cloudSyncStatusMessage = "デモ用のズレ強調データを適用済み"
+            cloudSyncStatusMessage = "ズレありシナリオを適用中"
             notificationsEnabled = true
             intenseEffectsEnabled = true
             analyzeCognitiveGaps(referenceDate: Self.demoReferenceDate)
@@ -389,7 +389,7 @@ final class AppViewModel: ObservableObject {
             gapInsights = []
             syncErrorMessage = nil
             lastCloudSyncAt = Date()
-            cloudSyncStatusMessage = "デモ用の順調シナリオを適用済み"
+            cloudSyncStatusMessage = "順調シナリオを適用中"
             notificationsEnabled = true
             intenseEffectsEnabled = false
             analyzeCognitiveGaps(referenceDate: Self.demoReferenceDate)
@@ -401,7 +401,7 @@ final class AppViewModel: ObservableObject {
             gapInsights = []
             syncErrorMessage = "GitHub API rate limit に達しました。しばらく待つか、トークンを再設定してください。"
             lastCloudSyncAt = nil
-            cloudSyncStatusMessage = "デモ用 API エラー状態"
+            cloudSyncStatusMessage = "APIエラーシナリオを適用中"
             notificationsEnabled = true
             intenseEffectsEnabled = true
             analyzeCognitiveGaps(referenceDate: Self.demoReferenceDate)
@@ -579,27 +579,27 @@ final class AppViewModel: ObservableObject {
                 score = 88
                 severity = .critical
                 summary = "「\(task.title)」は完了で記録されていますが、GitHub や Calendar に裏付けが見つかっていません。"
-                recommendation = "証跡になるコミットや予定を残すか、自己申告を見直してください。"
+                recommendation = "コミットやカレンダーに記録を残すか、チェックインを見直してみてください。"
             } else if selfReportedSkipped && !matchedEntries.isEmpty {
                 score = min(78, 55 + matchedEntries.count * 8)
                 severity = .warning
                 summary = "「\(task.title)」は見送り扱いですが、関連する客観ログが \(matchedEntries.count) 件あります。"
-                recommendation = "行動した分をチェックインに反映して、自己認識を更新しましょう。"
+                recommendation = "実際に動いた分をチェックインに反映してみてください。"
             } else if !selfReportedCompleted && !matchedEntries.isEmpty {
                 score = min(72, 48 + matchedEntries.count * 8)
                 severity = matchedEntries.count >= 2 ? .warning : .caution
                 summary = "「\(task.title)」に関連する客観ログが \(matchedEntries.count) 件ありますが、自己申告が追いついていません。"
-                recommendation = "できた行動を振り返りに記録して、自分の進捗を過小評価しないようにしましょう。"
+                recommendation = "行動した分をチェックインで記録しておくと、進捗が見えやすくなります。"
             } else if selfReportedCompleted && !matchedEntries.isEmpty {
                 score = max(8, 24 - matchedEntries.count * 6)
                 severity = .aligned
                 summary = "「\(task.title)」は自己申告と客観ログが整合しています。"
-                recommendation = "この調子で、行動と記録の一致を積み上げましょう。"
+                recommendation = "行動と記録が合っています。この調子で進めましょう。"
             } else {
                 score = 20
                 severity = .aligned
                 summary = "「\(task.title)」は今のところ大きなズレは見つかっていません。"
-                recommendation = "次の行動が見えたら、そのまま記録までつなげましょう。"
+                recommendation = "次の行動が見えたら、そのまま記録しておきましょう。"
             }
 
             return CognitiveGapInsight(
@@ -707,8 +707,8 @@ final class AppViewModel: ObservableObject {
 
         let content = UNMutableNotificationContent()
         content.title = insight.severity == .critical
-            ? "今日の「やったつもり」、証拠が足りません"
-            : "自己認識と行動ログにズレがあります"
+            ? "記録と行動にズレがあります"
+            : "チェックインしてみませんか"
         content.body = "\(insight.blockTitle): \(insight.recommendation)"
         content.sound = .default
         content.badge = 1

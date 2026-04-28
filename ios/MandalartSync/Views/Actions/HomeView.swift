@@ -134,7 +134,7 @@ struct HomeView: View {
 
                 VStack(alignment: .leading, spacing: 10) {
                     HStack {
-                        Label("今週の実行率", systemImage: "waveform.path.ecg")
+                        Label("全体の進捗", systemImage: "waveform.path.ecg")
                             .font(.system(size: 13, weight: .bold))
                             .foregroundColor(Color.zinc300)
                         Spacer()
@@ -174,7 +174,7 @@ struct HomeView: View {
     // MARK: - Today Section
     private var todaySection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Label("今日やるべきこと", systemImage: "checkmark.circle.fill")
+            Label("今日の記録", systemImage: "checkmark.circle.fill")
                 .font(.system(size: 17, weight: .black))
                 .foregroundColor(Color.stone900)
 
@@ -217,7 +217,7 @@ struct HomeView: View {
                     .font(.system(size: 20, weight: .black))
                     .foregroundColor(Color.stone900)
 
-                Text("今日の行動を振り返り、32項目の目標にどう近づいたかを記録しましょう。小さな一歩も大切な積み上げです。")
+                Text("今日の行動を簡単に記録する。所要時間は1分以内。")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(Color.stone500)
                     .lineSpacing(4)
@@ -267,11 +267,11 @@ struct HomeView: View {
                     navigateToJournal = true
                 }
                 quickActionTile(
-                    icon: "plus.circle.fill",
-                    title: "アクション追加",
-                    subtitle: "マンダラートに新しい目標を追加する"
+                    icon: "square.grid.3x3.fill",
+                    title: "マンダラートを見る",
+                    subtitle: "アクションの進捗や内容を確認・編集する"
                 ) {
-                    // navigate to action editor
+                    // 目標タブに切り替えるのはタブバーから操作するため、ここは空実装のまま
                 }
             }
         }

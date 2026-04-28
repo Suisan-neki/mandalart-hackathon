@@ -8,10 +8,10 @@ struct SyncJournalView: View {
             VStack(alignment: .leading, spacing: 0) {
                 // Hero
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("今日の積み上げ")
+                    Text("今日の行動ログ")
                         .font(.system(size: 26, weight: .black))
                         .foregroundColor(Color.stone900)
-                    Text("あなたの行動一つ一つが、目標という形になって確実に積み上がっています。")
+                    Text("チェックインや同期で取得した行動を時系列で確認できます。")
                         .font(.system(size: 13, weight: .medium))
                         .foregroundColor(Color.stone500)
                         .lineSpacing(4)
@@ -21,21 +21,38 @@ struct SyncJournalView: View {
                 .padding(.bottom, 28)
 
                 // Timeline
-                ZStack(alignment: .topLeading) {
-                    // Vertical line
-                    Rectangle()
-                        .fill(Color.stone200)
-                        .frame(width: 1)
-                        .padding(.leading, 39)
-                        .padding(.top, 4)
+                if vm.journalEntries.isEmpty {
+                    VStack(spacing: 12) {
+                        Image(systemName: "tray")
+                            .font(.system(size: 32))
+                            .foregroundColor(Color.stone300)
+                        Text("まだ記録がありません")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(Color.stone400)
+                        Text("チェックインするか、同期ボタンを押してみてください。")
+                            .font(.system(size: 12))
+                            .foregroundColor(Color.stone400)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 40)
+                    .padding(.horizontal, 24)
+                } else {
+                    ZStack(alignment: .topLeading) {
+                        // Vertical line
+                        Rectangle()
+                            .fill(Color.stone200)
+                            .frame(width: 1)
+                            .padding(.leading, 39)
+                            .padding(.top, 4)
 
-                    VStack(spacing: 28) {
-                        ForEach(vm.journalEntries) { entry in
-                            TimelineRow(entry: entry)
+                        VStack(spacing: 28) {
+                            ForEach(vm.journalEntries) { entry in
+                                TimelineRow(entry: entry)
+                            }
                         }
                     }
+                    .padding(.horizontal, 24)
                 }
-                .padding(.horizontal, 24)
 
                 // Encouragement card
                 encouragementCard
@@ -45,7 +62,7 @@ struct SyncJournalView: View {
             }
         }
         .background(Color.stone50.ignoresSafeArea())
-        .navigationTitle("アクション・ジャーナル")
+        .navigationTitle("行動ログ")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.white.opacity(0.8), for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
@@ -62,10 +79,10 @@ struct SyncJournalView: View {
                     .font(.system(size: 20))
                     .foregroundColor(Color.amber500)
             }
-            Text("素晴らしい1日でした")
+            Text("今日もおつかれさまでした")
                 .font(.system(size: 17, weight: .black))
                 .foregroundColor(Color(hex: "92400e"))
-            Text("どんなに小さな一歩でも、着実に目標へ近づいています。明日も無理のないペースで進めていきましょう。")
+            Text("記録が残ること自体が前進の証拠。明日もその調子で。")
                 .font(.system(size: 12, weight: .medium))
                 .foregroundColor(Color(hex: "b45309").opacity(0.8))
                 .multilineTextAlignment(.center)

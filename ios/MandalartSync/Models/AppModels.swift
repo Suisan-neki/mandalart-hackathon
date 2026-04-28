@@ -249,22 +249,22 @@ enum DemoScenarioPreset: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .cognitiveGap:
-            return "刺さる1シーン"
+            return "ズレありシナリオ"
         case .alignedMomentum:
-            return "順調に進んでいる日"
+            return "順調シナリオ"
         case .apiError:
-            return "APIエラー再現"
+            return "APIエラーシナリオ"
         }
     }
 
     var subtitle: String {
         switch self {
         case .cognitiveGap:
-            return "自己申告と客観ログがズレている状態を再現"
+            return "チェックインと外部ログにズレがある状態"
         case .alignedMomentum:
-            return "努力とログが一致している安心パターン"
+            return "チェックインと外部ログが一致している状態"
         case .apiError:
-            return "同期失敗時の見せ方を検証"
+            return "同期失敗時の動作を確認する"
         }
     }
 }

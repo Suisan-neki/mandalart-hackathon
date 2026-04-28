@@ -289,7 +289,7 @@ struct BlockDetailView: View {
                     // Header
                     HStack(alignment: .top) {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("Target Goal")
+                            Text("アクション")
                                 .font(.system(size: 10, weight: .bold))
                                 .foregroundColor(Color.zinc500)
                                 .tracking(1)
@@ -334,7 +334,7 @@ struct BlockDetailView: View {
                     // Resonance bar
                     VStack(alignment: .leading, spacing: 6) {
                         HStack {
-                            Text("達成率 (Achievement)")
+                            Text("共鳴度")
                                 .font(.system(size: 13, weight: .bold))
                                 .foregroundColor(Color.zinc400)
                             Spacer()
@@ -342,7 +342,7 @@ struct BlockDetailView: View {
                                 .font(.system(size: 13, weight: .bold))
                                 .foregroundColor(.white)
                         }
-                        Text("目標に向けた行動の積み重ねを示します")
+                        Text("このアクションへの取り組み度合い")
                             .font(.system(size: 10))
                             .foregroundColor(Color.zinc500)
 
@@ -386,7 +386,7 @@ struct BlockDetailView: View {
                     } else {
                         VStack(spacing: 10) {
                             Button(action: onDismiss) {
-                                Label("新しい目標を積み上げる", systemImage: "square.3.layers.3d")
+                                Label("閉じる", systemImage: "checkmark")
                                     .font(.system(size: 15, weight: .black))
                                     .foregroundColor(Color(hex: "1c1917"))
                                     .frame(maxWidth: .infinity)
