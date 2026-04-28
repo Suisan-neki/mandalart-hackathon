@@ -3,12 +3,17 @@ import SwiftUI
 struct ContentView: View {
     @EnvironmentObject private var vm: AppViewModel
     @State private var showSplash = true
-    @State private var showLaunchTutorial = true
+    /// 初回起動時（isFirstLaunch）はオンボーディング、
+    /// 2回目以降は LaunchTutorialView を1度だけ表示する。
+    @State private var showLaunchTutorial = false
 
     var body: some View {
         ZStack {
             if showSplash {
                 SplashView()
+                    .transition(.opacity)
+            } else if vm.isFirstLaunch {
+                OnboardingView()
                     .transition(.opacity)
             } else if showLaunchTutorial {
                 LaunchTutorialView {
@@ -23,10 +28,17 @@ struct ContentView: View {
             }
         }
         .animation(.easeInOut(duration: 0.4), value: showSplash)
+        .animation(.easeInOut(duration: 0.4), value: vm.isFirstLaunch)
         .animation(.easeInOut(duration: 0.4), value: showLaunchTutorial)
         .onAppear {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                showSplash = false
+                withAnimation(.easeInOut(duration: 0.4)) {
+                    showSplash = false
+                    // 初回起動でなければ LaunchTutorialView を表示
+                    if !vm.isFirstLaunch {
+                        showLaunchTutorial = true
+                    }
+                }
             }
         }
     }

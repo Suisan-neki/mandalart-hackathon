@@ -61,12 +61,6 @@ struct BlockMandalartView: View {
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
-        .onChange(of: vm.showMandalartTutorial) { show in
-            if show {
-                tutorialStep = 0
-                vm.showMandalartTutorial = false
-            }
-        }
         .toolbarBackground(Color.zinc950, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
         .sheet(isPresented: $isEditingMainGoal) {
