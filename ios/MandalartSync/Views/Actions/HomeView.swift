@@ -356,7 +356,7 @@ struct HomeView: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 4) {
-                        Text(vm.mostCriticalGap?.severity == .critical ? "未記録のアクションがあります" : "目標と行動を照らし合わせてみましょう")
+                        Text("目標と行動を照らし合わせてみましょう")
                             .font(.system(size: 13, weight: .bold))
                             .foregroundColor(Color(hex: "312e81"))
                         Image(systemName: "sparkles")

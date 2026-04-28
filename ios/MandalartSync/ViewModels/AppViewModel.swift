@@ -584,62 +584,17 @@ final class AppViewModel: ObservableObject {
             && entry.date >= Calendar.current.date(byAdding: .day, value: -7, to: referenceDate)!
         }
 
-        let selfReportedLookup: [Int: JournalEntry] = Dictionary(uniqueKeysWithValues: todayCheckinEntries.compactMap { entry in
-            guard let blockId = entry.relatedBlockId else { return nil }
-            return (blockId, entry)
-        })
-
+        // GitHubコミットがあるアクションのみ分析対象にする
         let insights = allDailyTasks.compactMap { task -> CognitiveGapInsight? in
-            // GitHubコミットがあれば自動的に実績ありとみなす
             let matchedCommits = githubEntries.filter { entry in
                 entryMatchesTask(entry, task: task)
             }
-            let hasGitHubEvidence = !matchedCommits.isEmpty
 
-            let selfReport = selfReportedLookup[task.blockId]
-            let selfReportedCompleted = selfReport?.kind == .manualCompleted
-            let selfReportedSkipped = selfReport?.kind == .manualSkipped
-
-            // GitHubログも手動記録もない場合は分析対象外
-            guard selfReport != nil || hasGitHubEvidence else {
-                return nil
-            }
+            // GitHubコミットがなければ分析対象外
+            guard !matchedCommits.isEmpty else { return nil }
 
             let matchedSources = Array(Set(matchedCommits.map(\.source))).sorted()
-
-            let score: Int
-            let severity: CognitiveGapSeverity
-            let summary: String
-            let recommendation: String
-
-            if hasGitHubEvidence {
-                // GitHubコミットがある→自動的に実績あり（手動記録不要）
-                if selfReportedSkipped {
-                    // 見送りにしたのにコミットがある
-                    score = min(72, 50 + matchedCommits.count * 8)
-                    severity = .warning
-                    summary = "「\(task.title)」は見送りにしていますが、GitHub に \(matchedCommits.count) 件のコミットがあります。"
-                    recommendation = "実際に動いた分を記録してみてください。"
-                } else {
-                    // GitHubコミットあり→完了扱い
-                    score = max(8, 20 - matchedCommits.count * 5)
-                    severity = .aligned
-                    summary = "「\(task.title)」は GitHub に \(matchedCommits.count) 件のコミットが確認できます。"
-                    recommendation = "行動が積み上がっています。このまま続けましょう。"
-                }
-            } else if selfReportedCompleted {
-                // 手動記録のみ（GitHubログなし）
-                score = 45
-                severity = .caution
-                summary = "「\(task.title)」は記録済みですが、GitHub に対応するコミットが見つかりません。"
-                recommendation = "コミットを残すか、記録の内容を確認してみてください。"
-            } else {
-                // 見送りのみ
-                score = 20
-                severity = .aligned
-                summary = "「\(task.title)」は今日は見送りにしました。"
-                recommendation = "明日もう一度振り返ってみましょう。"
-            }
+            let score = max(8, 20 - matchedCommits.count * 5)
 
             return CognitiveGapInsight(
                 id: "gap-\(task.blockId)",
@@ -648,12 +603,12 @@ final class AppViewModel: ObservableObject {
                 blockTitle: task.title,
                 categoryTitle: task.category,
                 score: score,
-                severity: severity,
-                selfReportedCompleted: selfReportedCompleted,
-                matchedEvidenceCount: matchedEntries.count,
+                severity: .aligned,
+                selfReportedCompleted: false,
+                matchedEvidenceCount: matchedCommits.count,
                 matchedSources: matchedSources,
-                summary: summary,
-                recommendation: recommendation
+                summary: "「\(task.title)」は GitHub に \(matchedCommits.count) 件のコミットが確認できます。",
+                recommendation: "行動が積み上がっています。このまま続けましょう。"
             )
         }
         .sorted {
@@ -745,9 +700,7 @@ final class AppViewModel: ObservableObject {
         }
 
         let content = UNMutableNotificationContent()
-        content.title = insight.severity == .critical
-            ? "未記録のアクションがあります"
-            : "今日の記録をつけてみませんか"
+        content.title = "今日の記録をつけてみませんか"
         content.body = "\(insight.blockTitle): \(insight.recommendation)"
         content.sound = .default
         content.badge = 1
