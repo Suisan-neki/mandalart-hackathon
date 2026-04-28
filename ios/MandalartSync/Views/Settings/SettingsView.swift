@@ -126,7 +126,13 @@ struct SettingsView: View {
                             .padding(.top, 14)
 
                         ForEach(DemoScenarioPreset.allCases) { preset in
-                            Button(action: { vm.applyDemoPreset(preset) }) {
+                            Button(action: {
+                                if vm.activeDemoPreset == preset {
+                                    vm.resetDemoPreset()
+                                } else {
+                                    vm.applyDemoPreset(preset)
+                                }
+                            }) {
                                 HStack(alignment: .top, spacing: 12) {
                                     ZStack {
                                         Circle()
@@ -197,29 +203,34 @@ struct SettingsView: View {
                         }
                         .padding(.horizontal, 16)
                         .padding(.vertical, 14)
+                    }
 
-                        Divider().padding(.horizontal, 16)
+                    Divider().padding(.horizontal, 16)
 
-                        Button(action: { vm.resetDemoPreset() }) {
-                            HStack(spacing: 12) {
-                                ZStack {
-                                    Circle()
-                                        .fill(Color.stone100)
-                                        .frame(width: 32, height: 32)
-                                    Image(systemName: "xmark.circle.fill")
-                                        .font(.system(size: 14))
-                                        .foregroundColor(Color.stone500)
-                                }
+                    Button(action: { vm.resetDemoPreset() }) {
+                        HStack(spacing: 12) {
+                            ZStack {
+                                Circle()
+                                    .fill(Color.stone100)
+                                    .frame(width: 32, height: 32)
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(Color.stone500)
+                            }
+                            VStack(alignment: .leading, spacing: 3) {
                                 Text("デモを解除して初期状態に戻す")
                                     .font(.system(size: 14, weight: .bold))
                                     .foregroundColor(Color.stone700)
-                                Spacer()
+                                Text("デモ表示が残っている場合もここから通常の空状態へ戻せます。")
+                                    .font(.system(size: 11, weight: .medium))
+                                    .foregroundColor(Color.stone500)
                             }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 14)
+                            Spacer()
                         }
-                        .buttonStyle(.plain)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 14)
                     }
+                    .buttonStyle(.plain)
                 }
 
                 Text("Mandalart Sync  Version 1.0.0")

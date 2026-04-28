@@ -135,6 +135,10 @@ struct CategoryGridView: View {
     let namespace: Namespace.ID
     let onTap: (MandalartBlock) -> Void
 
+    private var displayTitle: String {
+        category.title.isEmpty ? "テーマを入力" : category.title
+    }
+
     // Maps 8 blocks to a 3x3 grid (center = category label)
     private var gridOrder: [MandalartBlock?] {
         let b = category.blocks
@@ -143,7 +147,7 @@ struct CategoryGridView: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            Text(category.title)
+            Text(displayTitle)
                 .font(.system(size: 17, weight: .black))
                 .foregroundColor(category.color.primary)
 
@@ -161,7 +165,7 @@ struct CategoryGridView: View {
                                     RoundedRectangle(cornerRadius: 14)
                                         .stroke(Color.zinc800, lineWidth: 0.5)
                                 )
-                            Text(category.title)
+                            Text(displayTitle)
                                 .font(.system(size: 9, weight: .black))
                                 .foregroundColor(category.color.primary)
                                 .multilineTextAlignment(.center)
@@ -191,6 +195,9 @@ struct BlockCell: View {
     private var activeColor: Color { block.cleared ? Color(hex: "facc15") : color.primary }
     private var activeDark: Color  { block.cleared ? Color(hex: "ca8a04") : color.dark }
     private var activeBorder: Color { block.cleared ? Color(hex: "fde047") : color.border }
+    private var displayTitle: String {
+        block.title.isEmpty ? "タップして入力" : block.title
+    }
 
     var body: some View {
         GeometryReader { geo in
@@ -220,9 +227,9 @@ struct BlockCell: View {
                             .frame(height: 8)
                     }
                     .overlay(alignment: .topLeading) {
-                        Text(block.title)
+                        Text(displayTitle)
                             .font(.system(size: 9, weight: .bold))
-                            .foregroundColor(block.cleared ? Color(hex: "78350f") : .white)
+                            .foregroundColor(block.title.isEmpty ? .white.opacity(0.72) : (block.cleared ? Color(hex: "78350f") : .white))
                             .lineLimit(3)
                             .padding(6)
                     }

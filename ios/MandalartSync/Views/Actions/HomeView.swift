@@ -76,7 +76,7 @@ struct HomeView: View {
             Image(systemName: "wifi.slash")
                 .font(.system(size: 14, weight: .bold))
                 .foregroundColor(.white)
-            Text("オフラインです。同期は接続後に実行されます。")
+            Text("オフラインです。入力内容は端末に保存され、同期は接続後に実行できます。")
                 .font(.system(size: 13, weight: .medium))
                 .foregroundColor(.white)
             Spacer()

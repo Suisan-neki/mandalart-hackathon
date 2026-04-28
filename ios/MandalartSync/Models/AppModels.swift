@@ -182,13 +182,34 @@ struct PersistedAppState: Codable {
 
     static let `default` = PersistedAppState(
         mainGoal: "",
-        categories: [],
+        categories: Self.makeBlankCategories(),
         journalEntries: [],
         gapInsights: [],
         githubSettings: .default,
         googleCalendarSettings: .default,
         notificationsEnabled: true
     )
+
+    private static func makeBlankCategories() -> [MandalartCategory] {
+        let colors: [CategoryColor] = [.blue, .orange, .green, .purple]
+        return (0..<4).map { index in
+            let baseId = (index + 1) * 100
+            return MandalartCategory(
+                id: index + 1,
+                title: "",
+                color: colors[index],
+                blocks: (1...8).map { blockIndex in
+                    MandalartBlock(
+                        id: baseId + blockIndex,
+                        title: "",
+                        progress: 0,
+                        resonance: 50,
+                        cleared: false
+                    )
+                }
+            )
+        }
+    }
 
     private enum CodingKeys: String, CodingKey {
         case mainGoal

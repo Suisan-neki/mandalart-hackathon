@@ -23,23 +23,14 @@ struct MainTabView: View {
             }
             .tag(1)
 
-            // Tab 3: 記録
-            NavigationStack {
-                ResultView()
-            }
-            .tabItem {
-                Label("結果", systemImage: "chart.bar.fill")
-            }
-            .tag(2)
-
-            // Tab 4: 設定
+            // Tab 3: 設定
             NavigationStack {
                 SettingsView()
             }
             .tabItem {
                 Label("設定", systemImage: "gearshape.fill")
             }
-            .tag(3)
+            .tag(2)
         }
         .tint(Color.indigo600)
     }

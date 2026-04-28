@@ -33,6 +33,7 @@ final class AppViewModel: ObservableObject {
     private enum StorageKeys {
         static let appState = "mandalart-sync.app-state"
         static let lastNotifiedGapSignature = "mandalart-sync.last-notified-gap-signature"
+        static let activeDemoPreset = "mandalart-sync.active-demo-preset"
     }
 
     private enum SecretKeys {
@@ -80,7 +81,9 @@ final class AppViewModel: ObservableObject {
     @Published var cloudSyncStatusMessage: String = "未同期" {
         didSet { persistState() }
     }
-    @Published var activeDemoPreset: DemoScenarioPreset?
+    @Published var activeDemoPreset: DemoScenarioPreset? {
+        didSet { persistActiveDemoPreset() }
+    }
 
     /// 目標未設定＝初回起動（オンボーディング表示判定に使用）
     var isFirstLaunch: Bool { mainGoal.isEmpty }
@@ -136,6 +139,7 @@ final class AppViewModel: ObservableObject {
         let storedSettings = Self.loadStoredSettings(modelContext: modelContext)
         self.lastCloudSyncAt = storedSettings?.lastCloudSyncAt
         self.cloudSyncStatusMessage = storedSettings?.cloudSyncStatusMessage ?? "未同期"
+        self.activeDemoPreset = Self.loadActiveDemoPreset()
         persistState()
         networkMonitor.onStatusChange = { [weak self] offline in
             self?.isOffline = offline
@@ -225,15 +229,15 @@ final class AppViewModel: ObservableObject {
         case .cognitiveGap:
             return [
                 DemoScenarioStep(id: "gap-1", title: "1. ホームを開く", detail: "目標『ハッカソンで優勝する』と全体の進捗を確認する。"),
-                DemoScenarioStep(id: "gap-2", title: "2. 「目標」タブでマンダラートを確認する", detail: "32項目のアクションを開き、GitHubキーワードが未設定のブロックをタップしてキーワードを追加する。"),
-                DemoScenarioStep(id: "gap-3", title: "3. 「結果」タブで分析を確認する", detail: "GitHub連携分析を開き、コミットが取得されたアクションと未記録のアクションの差を見せる。"),
+                DemoScenarioStep(id: "gap-2", title: "2. 「目標」タブでマンダラートを確認する", detail: "アクション詳細を開き、GitHubコミット数が自動計測される説明を確認する。"),
+                DemoScenarioStep(id: "gap-3", title: "3. 「アクション」タブで分析を確認する", detail: "GitHub連携分析を開き、今日のコミット数と目標数の差を見せる。"),
                 DemoScenarioStep(id: "gap-4", title: "4. 「行動ログ」でタイムラインを見る", detail: "GitHubコミットと手動記録が混在したタイムラインを確認する。")
             ]
         case .alignedMomentum:
             return [
                 DemoScenarioStep(id: "aligned-1", title: "1. ホームを開く", detail: "目標と進捗を確認する。同期ボタンを押してGitHubコミットを取得する。"),
                 DemoScenarioStep(id: "aligned-2", title: "2. 「行動ログ」でタイムラインを見る", detail: "GitHubコミット、カレンダー予定、手動記録が並んでいるタイムラインを確認する。"),
-                DemoScenarioStep(id: "aligned-3", title: "3. 「結果」タブで分析を確認する", detail: "GitHub連携分析でコミットが全アクションに対応している状態を見せる。")
+                DemoScenarioStep(id: "aligned-3", title: "3. 「アクション」タブで分析を確認する", detail: "GitHub連携分析でコミット数が目標に届いている状態を見せる。")
             ]
         case .apiError:
             return [
@@ -417,11 +421,11 @@ final class AppViewModel: ObservableObject {
     }
 
     func resetDemoPreset() {
-        activeDemoPreset = nil
         resetAllData()
     }
 
     func resetAllData() {
+        activeDemoPreset = nil
         let state = PersistedAppState.default
         mainGoal = state.mainGoal
         categories = state.categories
@@ -436,13 +440,21 @@ final class AppViewModel: ObservableObject {
         KeychainStore.delete(service: SecretKeys.service, account: SecretKeys.googleCalendarToken)
         UserDefaults.standard.removeObject(forKey: StorageKeys.lastNotifiedGapSignature)
         syncErrorMessage = nil
+        syncRequiresSettings = false
+        isSyncing = false
     }
 
     func triggerSync() {
         guard !isSyncing else { return }
 
         if isOffline {
-            syncErrorMessage = "オフラインです。接続を確認してから再度お試しください。"
+            syncErrorMessage = nil
+            syncRequiresSettings = false
+            cloudSyncStatusMessage = "オフライン: ローカル保存で利用中"
+            appendSystemEntry(
+                action: "オフラインで利用中",
+                detail: "目標・アクション・記録は端末内に保存されます。外部サービス同期は接続後に再実行できます。"
+            )
             return
         }
 
@@ -479,32 +491,36 @@ final class AppViewModel: ObservableObject {
         var summary: [String] = []
         var failures: [String] = []
 
-        do {
-            let commits = try await gitHubService.fetchCommits(
-                username: githubSettings.owner,
-                token: storedGitHubToken()
-            )
-            let entries = commits.map { commit in
-                JournalEntry(
-                    id: "github-\(commit.sha)",
-                    date: commit.date,
-                    kind: .githubCommit,
-                    source: "GitHub: \(commit.repositoryName)",
-                    systemImageName: "chevron.left.forwardslash.chevron.right",
-                    iconHex: "18181b",
-                    action: "コミットを取得しました",
-                    detail: commit.message.components(separatedBy: .newlines).first ?? "Recent commit",
-                    targetGoal: mainGoal,
-                    relatedBlockId: nil
+        if githubSettings.owner.isEmpty {
+            summary.append("GitHub 未設定")
+        } else {
+            do {
+                let commits = try await gitHubService.fetchCommits(
+                    username: githubSettings.owner,
+                    token: storedGitHubToken()
                 )
+                let entries = commits.map { commit in
+                    JournalEntry(
+                        id: "github-\(commit.sha)",
+                        date: commit.date,
+                        kind: .githubCommit,
+                        source: "GitHub: \(commit.repositoryName)",
+                        systemImageName: "chevron.left.forwardslash.chevron.right",
+                        iconHex: "18181b",
+                        action: "コミットを取得しました",
+                        detail: commit.message.components(separatedBy: .newlines).first ?? "Recent commit",
+                        targetGoal: mainGoal,
+                        relatedBlockId: nil
+                    )
+                }
+                replaceEntries(of: .githubCommit, with: entries)
+                summary.append("GitHub \(entries.count)コミット")
+            } catch let error as GitHubServiceError {
+                failures.append(error.localizedDescription)
+                if error.requiresTokenReset { syncRequiresSettings = true }
+            } catch {
+                failures.append(error.localizedDescription)
             }
-            replaceEntries(of: .githubCommit, with: entries)
-            summary.append("GitHub \(entries.count)コミット")
-        } catch let error as GitHubServiceError {
-            failures.append(error.localizedDescription)
-            if error.requiresTokenReset { syncRequiresSettings = true }
-        } catch {
-            failures.append(error.localizedDescription)
         }
 
         if let token = storedGoogleCalendarAccessToken(),
@@ -541,11 +557,11 @@ final class AppViewModel: ObservableObject {
             summary.append("Google Calendar 未設定")
         }
 
-        if summary.isEmpty {
-            syncRequiresSettings = true
+        if githubSettings.owner.isEmpty && !googleCalendarSettings.hasAccessToken {
+            syncRequiresSettings = false
             appendSystemEntry(
-                action: "同期の設定が必要です",
-                detail: "設定から GitHub / Google Calendar の連携先を入力してください。"
+                action: "ローカルモードで利用中",
+                detail: "外部連携なしでも、目標・アクション・記録は端末内に保存されます。"
             )
         } else {
             appendSystemEntry(
@@ -572,6 +588,21 @@ final class AppViewModel: ObservableObject {
         }
 
         analyzeCognitiveGaps()
+    }
+
+    private func persistActiveDemoPreset() {
+        if let activeDemoPreset {
+            UserDefaults.standard.set(activeDemoPreset.rawValue, forKey: StorageKeys.activeDemoPreset)
+        } else {
+            UserDefaults.standard.removeObject(forKey: StorageKeys.activeDemoPreset)
+        }
+    }
+
+    private static func loadActiveDemoPreset() -> DemoScenarioPreset? {
+        guard let rawValue = UserDefaults.standard.string(forKey: StorageKeys.activeDemoPreset) else {
+            return nil
+        }
+        return DemoScenarioPreset(rawValue: rawValue)
     }
 
     private func analyzeCognitiveGaps(referenceDate: Date = .now) {
