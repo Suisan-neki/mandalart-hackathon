@@ -69,9 +69,6 @@ final class AppViewModel: ObservableObject {
     @Published var notificationsEnabled: Bool {
         didSet { persistState() }
     }
-    @Published var intenseEffectsEnabled: Bool {
-        didSet { persistState() }
-    }
     @Published var isSyncing = false
     @Published var syncErrorMessage: String?
     @Published var syncRequiresSettings = false
@@ -133,7 +130,6 @@ final class AppViewModel: ObservableObject {
         self.githubSettings = state.githubSettings
         self.googleCalendarSettings = state.googleCalendarSettings
         self.notificationsEnabled = state.notificationsEnabled
-        self.intenseEffectsEnabled = state.intenseEffectsEnabled
         let storedSettings = Self.loadStoredSettings(modelContext: modelContext)
         self.lastCloudSyncAt = storedSettings?.lastCloudSyncAt
         self.cloudSyncStatusMessage = storedSettings?.cloudSyncStatusMessage ?? "未同期"
@@ -225,21 +221,22 @@ final class AppViewModel: ObservableObject {
         switch activeDemoPreset {
         case .cognitiveGap:
             return [
-                DemoScenarioStep(id: "gap-1", title: "1. 目標を見せる", detail: "ホームで『ハッカソンで優勝する』のマンダラートと、強い警告バナーを見せる。"),
-                DemoScenarioStep(id: "gap-2", title: "2. 行動ログを開く", detail: "ジャーナルで GitHub コミットや予定が並ぶのに、自己申告が追いついていない状態を確認する。"),
-                DemoScenarioStep(id: "gap-3", title: "3. 結果画面で同期状態を確認する", detail: "同期スコアと『次の一手』を見せ、行動と記録のギャップを体験してもらう。")
+                DemoScenarioStep(id: "gap-1", title: "1. ホームを開く", detail: "目標『ハッカソンで優勝する』と全体の進捗を確認する。"),
+                DemoScenarioStep(id: "gap-2", title: "2. 「目標」タブでマンダラートを確認する", detail: "32項目のアクションを開き、GitHubキーワードが未設定のブロックをタップしてキーワードを追加する。"),
+                DemoScenarioStep(id: "gap-3", title: "3. 「結果」タブで分析を確認する", detail: "GitHub連携分析を開き、コミットが取得されたアクションと未記録のアクションの差を見せる。"),
+                DemoScenarioStep(id: "gap-4", title: "4. 「行動ログ」でタイムラインを見る", detail: "GitHubコミットと手動記録が混在したタイムラインを確認する。")
             ]
         case .alignedMomentum:
             return [
-                DemoScenarioStep(id: "aligned-1", title: "1. 今日の積み上げを見る", detail: "自己申告と GitHub / Calendar が揃っている状態を提示する。"),
-                DemoScenarioStep(id: "aligned-2", title: "2. 結果画面で同期状態を確認する", detail: "同期スコアが低く、行動と記録が揃っている状態を見せる。"),
-                DemoScenarioStep(id: "aligned-3", title: "3. 保存されることを示す", detail: "設定画面で SwiftData 保存と同期ドラフト更新を確認する。")
+                DemoScenarioStep(id: "aligned-1", title: "1. ホームを開く", detail: "目標と進捗を確認する。同期ボタンを押してGitHubコミットを取得する。"),
+                DemoScenarioStep(id: "aligned-2", title: "2. 「行動ログ」でタイムラインを見る", detail: "GitHubコミット、カレンダー予定、手動記録が並んでいるタイムラインを確認する。"),
+                DemoScenarioStep(id: "aligned-3", title: "3. 「結果」タブで分析を確認する", detail: "GitHub連携分析でコミットが全アクションに対応している状態を見せる。")
             ]
         case .apiError:
             return [
-                DemoScenarioStep(id: "error-1", title: "1. 同期を押す", detail: "ホーム右上の同期ボタンを押して、失敗バナーを発生させる。"),
-                DemoScenarioStep(id: "error-2", title: "2. エラー内容を説明する", detail: "Rate limit / 認証切れを想定したメッセージで、異常系でも体験を壊さないことを示す。"),
-                DemoScenarioStep(id: "error-3", title: "3. 復帰導線を見せる", detail: "設定画面から連携設定を直せることを案内する。")
+                DemoScenarioStep(id: "error-1", title: "1. 同期ボタンを押す", detail: "ホーム右上の同期ボタンを押す。エラーアラートが表示される。"),
+                DemoScenarioStep(id: "error-2", title: "2. エラー内容を確認する", detail: "401/403の認証エラーの場合、「設定を開く」ボタンが表示される。"),
+                DemoScenarioStep(id: "error-3", title: "3. 設定から復帰する", detail: "設定画面でGitHubトークンを再設定し、同期を再実行する。")
             ]
         case nil:
             return []
@@ -374,9 +371,6 @@ final class AppViewModel: ObservableObject {
         }
     }
 
-    func updateIntenseEffectsEnabled(to enabled: Bool) {
-        intenseEffectsEnabled = enabled
-    }
 
 
     func applyDemoPreset(_ preset: DemoScenarioPreset) {
@@ -392,7 +386,6 @@ final class AppViewModel: ObservableObject {
             lastCloudSyncAt = Date()
             cloudSyncStatusMessage = "ギャップシナリオを適用中"
             notificationsEnabled = true
-            intenseEffectsEnabled = true
             analyzeCognitiveGaps(referenceDate: Self.demoReferenceDate)
 
         case .alignedMomentum:
@@ -404,7 +397,6 @@ final class AppViewModel: ObservableObject {
             lastCloudSyncAt = Date()
             cloudSyncStatusMessage = "同期済みシナリオを適用中"
             notificationsEnabled = true
-            intenseEffectsEnabled = false
             analyzeCognitiveGaps(referenceDate: Self.demoReferenceDate)
 
         case .apiError:
@@ -417,7 +409,6 @@ final class AppViewModel: ObservableObject {
             lastCloudSyncAt = nil
             cloudSyncStatusMessage = "APIエラーシナリオを適用中"
             notificationsEnabled = true
-            intenseEffectsEnabled = true
             analyzeCognitiveGaps(referenceDate: Self.demoReferenceDate)
         }
     }
@@ -431,7 +422,6 @@ final class AppViewModel: ObservableObject {
         githubSettings = state.githubSettings
         googleCalendarSettings = state.googleCalendarSettings
         notificationsEnabled = state.notificationsEnabled
-        intenseEffectsEnabled = state.intenseEffectsEnabled
         lastCloudSyncAt = nil
         cloudSyncStatusMessage = "未同期"
         KeychainStore.delete(service: SecretKeys.service, account: SecretKeys.githubToken)
@@ -632,7 +622,22 @@ final class AppViewModel: ObservableObject {
         }
     }
 
+    func updateBlockGitHubKeywords(categoryId: Int, blockId: Int, keywords: [String]) {
+        guard let ci = categories.firstIndex(where: { $0.id == categoryId }) else { return }
+        guard let bi = categories[ci].blocks.firstIndex(where: { $0.id == blockId }) else { return }
+        categories[ci].blocks[bi].githubKeywords = keywords
+        analyzeCognitiveGaps()
+    }
+
     private func keywords(for task: DailyTask) -> Set<String> {
+        // ブロックにユーザー設定の GitHub キーワードがあればそれを優先使用
+        let block = categories
+            .flatMap(\.blocks)
+            .first { $0.id == task.blockId }
+        if let block = block, !block.githubKeywords.isEmpty {
+            return Set(block.githubKeywords.map(normalize).filter { !$0.isEmpty })
+        }
+
         let baseStrings = [task.title, task.category, mainGoal]
         var tokens = Set(baseStrings.map(normalize).filter { !$0.isEmpty })
 
@@ -758,7 +763,7 @@ final class AppViewModel: ObservableObject {
                     MandalartBlock(id: 305, title: "スクショを残す", progress: aligned ? 67 : 18, resonance: 40, cleared: false),
                     MandalartBlock(id: 306, title: "データを翌日に持ち越さない", progress: aligned ? 88 : 28, resonance: 81, cleared: false),
                     MandalartBlock(id: 307, title: "通知で自分を追い込む", progress: aligned ? 78 : 40, resonance: 74, cleared: false),
-                    MandalartBlock(id: 308, title: "証拠のない達成をなくす", progress: aligned ? 83 : 12, resonance: 93, cleared: false),
+                    MandalartBlock(id: 308, title: "フィードバックを反映する", progress: aligned ? 83 : 12, resonance: 93, cleared: false),
                 ]
             ),
             MandalartCategory(
@@ -779,11 +784,11 @@ final class AppViewModel: ObservableObject {
 
     private static func makeCognitiveGapJournalEntries(mainGoal: String) -> [JournalEntry] {
         [
-            JournalEntry(id: "demo-github-1", date: demoReferenceDate.addingTimeInterval(-60 * 60 * 5), kind: .githubCommit, source: "GitHub", systemImageName: "chevron.left.forwardslash.chevron.right", iconHex: "18181b", action: "コミットを取得しました", detail: "feat: add haptic warning banner for cognitive gap", targetGoal: mainGoal, relatedBlockId: nil),
-            JournalEntry(id: "demo-github-2", date: demoReferenceDate.addingTimeInterval(-60 * 60 * 4), kind: .githubCommit, source: "GitHub", systemImageName: "chevron.left.forwardslash.chevron.right", iconHex: "18181b", action: "コミットを取得しました", detail: "fix: tune demo flow and final pitch scene", targetGoal: mainGoal, relatedBlockId: nil),
-            JournalEntry(id: "demo-calendar-1", date: demoReferenceDate.addingTimeInterval(-60 * 60 * 3), kind: .calendarEvent, source: "Google Calendar", systemImageName: "calendar", iconHex: "2563eb", action: "予定を取得しました", detail: "刺さる1シーン確認ミーティング", targetGoal: mainGoal, relatedBlockId: nil),
-            JournalEntry(id: "demo-manual-1", date: demoReferenceDate.addingTimeInterval(-60 * 90), kind: .manualCompleted, source: "Manual", systemImageName: "checkmark.circle.fill", iconHex: "22c55e", action: "アクションを完了しました", detail: "3分で話せるようにする", targetGoal: mainGoal, relatedBlockId: 205),
-            JournalEntry(id: "demo-manual-2", date: demoReferenceDate.addingTimeInterval(-60 * 70), kind: .manualCompleted, source: "Manual", systemImageName: "checkmark.circle.fill", iconHex: "22c55e", action: "アクションを完了しました", detail: "証拠のない達成をなくす", targetGoal: mainGoal, relatedBlockId: 308),
+            JournalEntry(id: "demo-github-1", date: demoReferenceDate.addingTimeInterval(-60 * 60 * 5), kind: .githubCommit, source: "GitHub", systemImageName: "chevron.left.forwardslash.chevron.right", iconHex: "18181b", action: "コミットを取得しました", detail: "feat: add github keyword sync to block detail", targetGoal: mainGoal, relatedBlockId: nil),
+            JournalEntry(id: "demo-github-2", date: demoReferenceDate.addingTimeInterval(-60 * 60 * 4), kind: .githubCommit, source: "GitHub", systemImageName: "chevron.left.forwardslash.chevron.right", iconHex: "18181b", action: "コミットを取得しました", detail: "fix: offline banner and error handling", targetGoal: mainGoal, relatedBlockId: nil),
+            JournalEntry(id: "demo-calendar-1", date: demoReferenceDate.addingTimeInterval(-60 * 60 * 3), kind: .calendarEvent, source: "Google Calendar", systemImageName: "calendar", iconHex: "2563eb", action: "予定を取得しました", detail: "デモ準備 ミーティング", targetGoal: mainGoal, relatedBlockId: nil),
+            JournalEntry(id: "demo-manual-1", date: demoReferenceDate.addingTimeInterval(-60 * 90), kind: .manualCompleted, source: "Manual", systemImageName: "checkmark.circle.fill", iconHex: "22c55e", action: "アクションを完了しました", detail: "プレゼン練習（3分）", targetGoal: mainGoal, relatedBlockId: 205),
+            JournalEntry(id: "demo-manual-2", date: demoReferenceDate.addingTimeInterval(-60 * 70), kind: .manualCompleted, source: "Manual", systemImageName: "checkmark.circle.fill", iconHex: "22c55e", action: "アクションを完了しました", detail: "スライドのフィードバック反映", targetGoal: mainGoal, relatedBlockId: 308),
             JournalEntry(id: "demo-system-1", date: demoReferenceDate.addingTimeInterval(-60 * 20), kind: .system, source: "System", systemImageName: "eye.trianglebadge.exclamationmark.fill", iconHex: "dc2626", action: "記録されていないアクションがあります", detail: "外部ログに対応する記録が見つかりませんでした", targetGoal: mainGoal, relatedBlockId: nil),
         ]
     }
@@ -795,7 +800,7 @@ final class AppViewModel: ObservableObject {
             JournalEntry(id: "aligned-manual-1", date: demoReferenceDate.addingTimeInterval(-60 * 55), kind: .manualCompleted, source: "Manual", systemImageName: "checkmark.circle.fill", iconHex: "22c55e", action: "アクションを完了しました", detail: "プレゼンスライドを作る", targetGoal: mainGoal, relatedBlockId: 201),
             JournalEntry(id: "aligned-manual-2", date: demoReferenceDate.addingTimeInterval(-60 * 40), kind: .manualCompleted, source: "Manual", systemImageName: "checkmark.circle.fill", iconHex: "22c55e", action: "アクションを完了しました", detail: "作業をCalendarに入れる", targetGoal: mainGoal, relatedBlockId: 301),
             JournalEntry(id: "aligned-manual-3", date: demoReferenceDate.addingTimeInterval(-60 * 15), kind: .manualCompleted, source: "Manual", systemImageName: "checkmark.circle.fill", iconHex: "22c55e", action: "アクションを完了しました", detail: "詰まりをすぐ相談", targetGoal: mainGoal, relatedBlockId: 402),
-            JournalEntry(id: "aligned-system-1", date: demoReferenceDate.addingTimeInterval(-60 * 5), kind: .system, source: "System", systemImageName: "star.fill", iconHex: "22c55e", action: "記録と行動が一致しています", detail: "自己申告と客観ログがきれいに揃いました", targetGoal: mainGoal, relatedBlockId: nil),
+            JournalEntry(id: "aligned-system-1", date: demoReferenceDate.addingTimeInterval(-60 * 5), kind: .system, source: "System", systemImageName: "star.fill", iconHex: "22c55e", action: "記録と行動が一致しています", detail: "GitHubのコミットと記録が対応しています", targetGoal: mainGoal, relatedBlockId: nil),
         ]
     }
 
@@ -819,8 +824,7 @@ final class AppViewModel: ObservableObject {
             gapInsights: gapInsights,
             githubSettings: githubSettings,
             googleCalendarSettings: googleCalendarSettings,
-            notificationsEnabled: notificationsEnabled,
-            intenseEffectsEnabled: intenseEffectsEnabled
+            notificationsEnabled: notificationsEnabled
         )
 
         persistStateToSwiftData(state)
@@ -842,8 +846,7 @@ final class AppViewModel: ObservableObject {
                         githubHasPersonalAccessToken: state.githubSettings.hasPersonalAccessToken,
                         googleCalendarID: state.googleCalendarSettings.calendarId,
                         googleCalendarHasAccessToken: state.googleCalendarSettings.hasAccessToken,
-                        notificationsEnabled: state.notificationsEnabled,
-                        intenseEffectsEnabled: state.intenseEffectsEnabled
+                        notificationsEnabled: state.notificationsEnabled
                     )
                     modelContext.insert(record)
                     return record
@@ -856,7 +859,6 @@ final class AppViewModel: ObservableObject {
             settings.googleCalendarID = state.googleCalendarSettings.calendarId
             settings.googleCalendarHasAccessToken = state.googleCalendarSettings.hasAccessToken
             settings.notificationsEnabled = state.notificationsEnabled
-            settings.intenseEffectsEnabled = state.intenseEffectsEnabled
             settings.lastCloudSyncAt = lastCloudSyncAt
             settings.cloudSyncStatusMessage = cloudSyncStatusMessage
 
@@ -948,8 +950,7 @@ final class AppViewModel: ObservableObject {
             gapInsights: state.gapInsights,
             githubSettings: state.githubSettings,
             googleCalendarSettings: state.googleCalendarSettings,
-            notificationsEnabled: state.notificationsEnabled,
-            intenseEffectsEnabled: state.intenseEffectsEnabled
+            notificationsEnabled: state.notificationsEnabled
         )
 
         do {
@@ -998,8 +999,7 @@ final class AppViewModel: ObservableObject {
                 calendarId: settings.googleCalendarID,
                 hasAccessToken: settings.googleCalendarHasAccessToken
             ),
-            notificationsEnabled: settings.notificationsEnabled,
-            intenseEffectsEnabled: settings.intenseEffectsEnabled
+            notificationsEnabled: settings.notificationsEnabled
         )
     }
 

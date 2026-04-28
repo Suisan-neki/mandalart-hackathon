@@ -1,6 +1,4 @@
-import AudioToolbox
 import SwiftUI
-import UIKit
 
 struct DailyCheckinView: View {
     @Environment(\.dismiss) private var dismiss
@@ -28,7 +26,7 @@ struct DailyCheckinView: View {
             .background(Color.stone50.ignoresSafeArea())
             .overlay {
                 flashColor
-                    .opacity(vm.intenseEffectsEnabled ? 0.14 : 0)
+                    .opacity(0.14)
                     .ignoresSafeArea()
                     .allowsHitTesting(false)
             }
@@ -146,20 +144,16 @@ struct DailyCheckinView: View {
                 .shadow(color: .black.opacity(0.08), radius: 12, y: 4)
                 .overlay(Circle().stroke(Color.stone200, lineWidth: 0.5))
         }
-        .scaleEffect(vm.intenseEffectsEnabled ? 1.02 : 1.0)
     }
 
     private func triggerFeedback(for answer: CheckinAnswer) {
         let generator = UINotificationFeedbackGenerator()
         generator.notificationOccurred(answer == .completed ? .success : .warning)
 
-        if vm.intenseEffectsEnabled {
-            AudioServicesPlaySystemSound(answer == .completed ? 1111 : 1006)
-            flashColor = answer == .completed ? Color.green : Color.red
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
-                withAnimation(.easeOut(duration: 0.2)) {
-                    flashColor = .clear
-                }
+        flashColor = answer == .completed ? Color.green : Color.red
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+            withAnimation(.easeOut(duration: 0.2)) {
+                flashColor = .clear
             }
         }
     }

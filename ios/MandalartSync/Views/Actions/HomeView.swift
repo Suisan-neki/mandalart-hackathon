@@ -1,6 +1,4 @@
-import AudioToolbox
 import SwiftUI
-import UIKit
 
 struct HomeView: View {
     @EnvironmentObject var vm: AppViewModel
@@ -10,7 +8,6 @@ struct HomeView: View {
     @State private var navigateToResult = false
     @State private var navigateToSettings = false
     @State private var bannerPulse = false
-    @State private var warningShake: CGFloat = 0
 
     var body: some View {
         ScrollView {
@@ -378,10 +375,7 @@ struct HomeView: View {
             )
         }
         .buttonStyle(.plain)
-        .scaleEffect(bannerPulse ? 1.01 : 0.985)
-        .shadow(color: bannerShadow, radius: bannerPulse ? 22 : 8, y: 4)
-        .offset(x: warningShake)
-        .animation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true), value: bannerPulse)
+        .shadow(color: bannerShadow, radius: 8, y: 4)
     }
 
     private var bannerBackground: LinearGradient {
@@ -405,28 +399,12 @@ struct HomeView: View {
 
     private var bannerShadow: Color {
         vm.mostCriticalGap?.severity == .critical
-            ? Color.red500.opacity(vm.intenseEffectsEnabled ? 0.28 : 0.12)
+            ? Color.red500.opacity(0.12)
             : Color.indigo400.opacity(0.12)
     }
 
     private func startWarningAnimationIfNeeded() {
-        guard let gap = vm.mostCriticalGap else { return }
-
         bannerPulse = true
-
-        guard vm.intenseEffectsEnabled, gap.severity.rank >= CognitiveGapSeverity.warning.rank else { return }
-
-        let notification = UINotificationFeedbackGenerator()
-        notification.notificationOccurred(gap.severity == .critical ? .error : .warning)
-        AudioServicesPlaySystemSound(1006)
-
-        withAnimation(.easeInOut(duration: 0.08)) { warningShake = -10 }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
-            withAnimation(.easeInOut(duration: 0.08)) { warningShake = 8 }
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.16) {
-            withAnimation(.spring(response: 0.25, dampingFraction: 0.5)) { warningShake = 0 }
-        }
     }
 }
 

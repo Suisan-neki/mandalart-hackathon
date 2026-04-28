@@ -39,6 +39,17 @@ struct MandalartBlock: Identifiable, Codable, Equatable {
     var progress: Double  // 0–100
     var resonance: Double // 0–100
     var cleared: Bool
+    /// GitHubコミットと紐づけるキーワード（例: ["swift", "checkin"]）
+    var githubKeywords: [String]
+
+    init(id: Int, title: String, progress: Double, resonance: Double, cleared: Bool, githubKeywords: [String] = []) {
+        self.id = id
+        self.title = title
+        self.progress = progress
+        self.resonance = resonance
+        self.cleared = cleared
+        self.githubKeywords = githubKeywords
+    }
 }
 
 // MARK: - Mandalart Category
@@ -168,7 +179,6 @@ struct PersistedAppState: Codable {
     var githubSettings: GitHubSettings
     var googleCalendarSettings: GoogleCalendarSettings
     var notificationsEnabled: Bool
-    var intenseEffectsEnabled: Bool
 
     static let `default` = PersistedAppState(
         mainGoal: "最強のエンジニアになる",
@@ -177,8 +187,7 @@ struct PersistedAppState: Codable {
         gapInsights: [],
         githubSettings: .default,
         googleCalendarSettings: .default,
-        notificationsEnabled: true,
-        intenseEffectsEnabled: true
+        notificationsEnabled: true
     )
 
     private enum CodingKeys: String, CodingKey {
@@ -189,7 +198,6 @@ struct PersistedAppState: Codable {
         case githubSettings
         case googleCalendarSettings
         case notificationsEnabled
-        case intenseEffectsEnabled
     }
 
     init(
@@ -199,8 +207,7 @@ struct PersistedAppState: Codable {
         gapInsights: [CognitiveGapInsight],
         githubSettings: GitHubSettings,
         googleCalendarSettings: GoogleCalendarSettings,
-        notificationsEnabled: Bool,
-        intenseEffectsEnabled: Bool
+        notificationsEnabled: Bool
     ) {
         self.mainGoal = mainGoal
         self.categories = categories
@@ -209,7 +216,6 @@ struct PersistedAppState: Codable {
         self.githubSettings = githubSettings
         self.googleCalendarSettings = googleCalendarSettings
         self.notificationsEnabled = notificationsEnabled
-        self.intenseEffectsEnabled = intenseEffectsEnabled
     }
 
     init(from decoder: Decoder) throws {
@@ -221,7 +227,6 @@ struct PersistedAppState: Codable {
         self.githubSettings = try container.decodeIfPresent(GitHubSettings.self, forKey: .githubSettings) ?? .default
         self.googleCalendarSettings = try container.decodeIfPresent(GoogleCalendarSettings.self, forKey: .googleCalendarSettings) ?? .default
         self.notificationsEnabled = try container.decodeIfPresent(Bool.self, forKey: .notificationsEnabled) ?? true
-        self.intenseEffectsEnabled = try container.decodeIfPresent(Bool.self, forKey: .intenseEffectsEnabled) ?? true
     }
 }
 
@@ -235,7 +240,6 @@ struct CloudSyncEnvelope: Codable {
     let githubSettings: GitHubSettings
     let googleCalendarSettings: GoogleCalendarSettings
     let notificationsEnabled: Bool
-    let intenseEffectsEnabled: Bool
 }
 
 // MARK: - Demo Mode
@@ -402,7 +406,6 @@ final class StoredSettings {
     var googleCalendarID: String
     var googleCalendarHasAccessToken: Bool
     var notificationsEnabled: Bool
-    var intenseEffectsEnabled: Bool
     var lastCloudSyncAt: Date?
     var cloudSyncStatusMessage: String?
 
@@ -415,7 +418,6 @@ final class StoredSettings {
         googleCalendarID: String,
         googleCalendarHasAccessToken: Bool,
         notificationsEnabled: Bool,
-        intenseEffectsEnabled: Bool,
         lastCloudSyncAt: Date? = nil,
         cloudSyncStatusMessage: String? = nil
     ) {
@@ -427,7 +429,6 @@ final class StoredSettings {
         self.googleCalendarID = googleCalendarID
         self.googleCalendarHasAccessToken = googleCalendarHasAccessToken
         self.notificationsEnabled = notificationsEnabled
-        self.intenseEffectsEnabled = intenseEffectsEnabled
         self.lastCloudSyncAt = lastCloudSyncAt
         self.cloudSyncStatusMessage = cloudSyncStatusMessage
     }

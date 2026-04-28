@@ -104,6 +104,7 @@ struct BlockMandalartView: View {
                 withAnimation(.spring()) { selectedBlock = nil }
             }
         )
+        .environmentObject(vm)
         .padding(.horizontal, 24)
     }
 
@@ -268,6 +269,10 @@ struct BlockDetailView: View {
     let onClear: () -> Void
     let onDismiss: () -> Void
 
+    @EnvironmentObject private var vm: AppViewModel
+    @State private var newKeyword: String = ""
+    @FocusState private var keywordFieldFocused: Bool
+
     var body: some View {
         ZStack(alignment: .top) {
             RoundedRectangle(cornerRadius: 32)
@@ -359,6 +364,81 @@ struct BlockDetailView: View {
                         }
                     }
 
+                    // GitHub キーワード
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "link")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundColor(Color.zinc400)
+                            Text("GitHub 連携キーワード")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundColor(Color.zinc400)
+                        }
+                        Text("コミットメッセージにこのキーワードが含まれると自動で記録されます")
+                            .font(.system(size: 10))
+                            .foregroundColor(Color.zinc600)
+                            .lineSpacing(2)
+
+                        // 既存キーワードタグ
+                        let keywords = sel.block.githubKeywords
+                        if !keywords.isEmpty {
+                            FlowLayout(spacing: 6) {
+                                ForEach(keywords, id: \.self) { kw in
+                                    HStack(spacing: 4) {
+                                        Text(kw)
+                                            .font(.system(size: 12, weight: .medium))
+                                            .foregroundColor(.white)
+                                        Button(action: {
+                                            let updated = keywords.filter { $0 != kw }
+                                            vm.updateBlockGitHubKeywords(
+                                                categoryId: sel.categoryId,
+                                                blockId: sel.block.id,
+                                                keywords: updated
+                                            )
+                                        }) {
+                                            Image(systemName: "xmark")
+                                                .font(.system(size: 9, weight: .bold))
+                                                .foregroundColor(Color.zinc400)
+                                        }
+                                    }
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 5)
+                                    .background(Color.zinc700)
+                                    .clipShape(Capsule())
+                                }
+                            }
+                        }
+
+                        // キーワード追加フィールド
+                        HStack(spacing: 8) {
+                            TextField("例: swift, ios, commit", text: $newKeyword)
+                                .font(.system(size: 13))
+                                .foregroundColor(.white)
+                                .autocorrectionDisabled()
+                                .textInputAutocapitalization(.never)
+                                .focused($keywordFieldFocused)
+                                .onSubmit { addKeyword() }
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(Color.zinc800)
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .stroke(keywordFieldFocused ? sel.color.primary : Color.zinc700, lineWidth: 1)
+                                )
+
+                            Button(action: addKeyword) {
+                                Image(systemName: "plus")
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundColor(newKeyword.trimmingCharacters(in: .whitespaces).isEmpty ? Color.zinc600 : sel.color.primary)
+                                    .frame(width: 36, height: 36)
+                                    .background(Color.zinc800)
+                                    .clipShape(Circle())
+                            }
+                            .disabled(newKeyword.trimmingCharacters(in: .whitespaces).isEmpty)
+                        }
+                    }
+
                     // Actions
                     if !sel.block.cleared {
                         VStack(spacing: 10) {
@@ -409,6 +489,63 @@ struct BlockDetailView: View {
             }
         }
         .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private func addKeyword() {
+        let kw = newKeyword.trimmingCharacters(in: .whitespaces)
+        guard !kw.isEmpty else { return }
+        var updated = sel.block.githubKeywords
+        if !updated.contains(kw) {
+            updated.append(kw)
+            vm.updateBlockGitHubKeywords(
+                categoryId: sel.categoryId,
+                blockId: sel.block.id,
+                keywords: updated
+            )
+        }
+        newKeyword = ""
+    }
+}
+
+// MARK: - Flow Layout (wrap tags)
+struct FlowLayout: Layout {
+    var spacing: CGFloat = 8
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let maxWidth = proposal.width ?? .infinity
+        var x: CGFloat = 0
+        var y: CGFloat = 0
+        var rowHeight: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x + size.width > maxWidth && x > 0 {
+                x = 0
+                y += rowHeight + spacing
+                rowHeight = 0
+            }
+            x += size.width + spacing
+            rowHeight = max(rowHeight, size.height)
+        }
+        return CGSize(width: maxWidth, height: y + rowHeight)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var x = bounds.minX
+        var y = bounds.minY
+        var rowHeight: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x + size.width > bounds.maxX && x > bounds.minX {
+                x = bounds.minX
+                y += rowHeight + spacing
+                rowHeight = 0
+            }
+            subview.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))
+            x += size.width + spacing
+            rowHeight = max(rowHeight, size.height)
+        }
     }
 }
 
